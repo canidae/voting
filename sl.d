@@ -1,10 +1,8 @@
 import std.algorithm: sort;
 import std.stdio;
 
-class Candidate {
+class Party {
     string name;
-    ulong seats;
-    ulong votes = 0;
     bool excluded = false;
 
     this(string name) {
@@ -12,455 +10,476 @@ class Candidate {
     }
 }
 
+class District {
+    string name;
+    ulong seats;
+    Vote[] votes;
+
+    this(string name, ulong seats) {
+        this.name = name;
+        this.seats = seats;
+    }
+}
+
 struct Vote {
-    Candidate[] candidates;
+    Party[] parties;
 }
 
 void main() {
-    Candidate r = new Candidate("Rodt");
-    Candidate sv = new Candidate("Sosialistisk Venstreparti");
-    Candidate ap = new Candidate("Arbeiderpartiet");
-    Candidate sp = new Candidate("Senterpartiet");
-    Candidate krf = new Candidate("Kristelig Folkeparti");
-    Candidate v = new Candidate("Venstre");
-    Candidate h = new Candidate("Hoyre");
-    Candidate frp = new Candidate("Fremskrittspartiet");
+    /* create parties */
+    Party r = new Party("Rodt");
+    Party sv = new Party("Sosialistisk Venstreparti");
+    Party ap = new Party("Arbeiderpartiet");
+    Party sp = new Party("Senterpartiet");
+    Party krf = new Party("Kristelig Folkeparti");
+    Party v = new Party("Venstre");
+    Party h = new Party("Hoyre");
+    Party frp = new Party("Fremskrittspartiet");
 
-    Candidate[] candidates;
-    candidates ~= r;
-    candidates ~= sv;
-    candidates ~= ap;
-    candidates ~= sp;
-    candidates ~= krf;
-    candidates ~= v;
-    candidates ~= h;
-    candidates ~= frp;
+    Party[] parties;
+    parties ~= r;
+    parties ~= sv;
+    parties ~= ap;
+    parties ~= sp;
+    parties ~= krf;
+    parties ~= v;
+    parties ~= h;
+    parties ~= frp;
+
+    /* create districts */
+    District ak = new District("Akershus", 16);
+    District au = new District("Aust-Agder", 4);
+    District bu = new District("Buskerud", 9);
+    District fi = new District("Finnmark", 5);
+    District he = new District("Hedmark", 8);
+    District ho = new District("Hordaland", 15);
+    District mo = new District("More og Romsdal", 9);
+    District no = new District("Nordland", 10);
+    District nt = new District("Nord-Trondelag", 6);
+    District op = new District("Oppland", 7);
+    District os = new District("Oslo", 17);
+    District ro = new District("Rogaland", 13);
+    District so = new District("Sogn og Fjordane", 5);
+    District st = new District("Sor-Trondelag", 10);
+    District te = new District("Telemark", 6);
+    District tr = new District("Troms", 7);
+    District va = new District("Vest-Agder", 6);
+    District ve = new District("Vestfold", 7);
+    District of = new District("Ostfold", 9);
+
+    District[] districts;
+    districts ~= ak;
+    districts ~= au;
+    districts ~= bu;
+    districts ~= fi;
+    districts ~= he;
+    districts ~= ho;
+    districts ~= mo;
+    districts ~= no;
+    districts ~= nt;
+    districts ~= op;
+    districts ~= os;
+    districts ~= ro;
+    districts ~= so;
+    districts ~= st;
+    districts ~= te;
+    districts ~= tr;
+    districts ~= va;
+    districts ~= ve;
+    districts ~= of;
 
     /* assign votes */
     /* akershus */
-    Vote[] votes;
     foreach (i; 0 .. 101241)
-        votes ~= Vote([ap]);
+        ak.votes ~= Vote([ap]);
     foreach (i; 0 .. 17040)
-        votes ~= Vote([sv]);
+        ak.votes ~= Vote([sv]);
     foreach (i; 0 .. 2566)
-        votes ~= Vote([r]);
+        ak.votes ~= Vote([r]);
     foreach (i; 0 .. 9435)
-        votes ~= Vote([sp]);
+        ak.votes ~= Vote([sp]);
     foreach (i; 0 .. 9308)
-        votes ~= Vote([krf]);
+        ak.votes ~= Vote([krf]);
     foreach (i; 0 .. 14688)
-        votes ~= Vote([v]);
+        ak.votes ~= Vote([v]);
     foreach (i; 0 .. 69505)
-        votes ~= Vote([h]);
+        ak.votes ~= Vote([h]);
     foreach (i; 0 .. 73300)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 16;
+        ak.votes ~= Vote([frp]);
 
     /* aust-agder */
-    //Vote[] votes;
     foreach (i; 0 .. 19377)
-        votes ~= Vote([ap]);
+        au.votes ~= Vote([ap]);
     foreach (i; 0 .. 2588)
-        votes ~= Vote([sv]);
+        au.votes ~= Vote([sv]);
     foreach (i; 0 .. 377)
-        votes ~= Vote([r]);
+        au.votes ~= Vote([r]);
     foreach (i; 0 .. 2609)
-        votes ~= Vote([sp]);
+        au.votes ~= Vote([sp]);
     foreach (i; 0 .. 6663)
-        votes ~= Vote([krf]);
+        au.votes ~= Vote([krf]);
     foreach (i; 0 .. 2054)
-        votes ~= Vote([v]);
+        au.votes ~= Vote([v]);
     foreach (i; 0 .. 9721)
-        votes ~= Vote([h]);
+        au.votes ~= Vote([h]);
     foreach (i; 0 .. 15538)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 4;
+        au.votes ~= Vote([frp]);
 
     /* buskerud */
-    //Vote[] votes;
     foreach (i; 0 .. 52751)
-        votes ~= Vote([ap]);
+        bu.votes ~= Vote([ap]);
     foreach (i; 0 .. 6514)
-        votes ~= Vote([sv]);
+        bu.votes ~= Vote([sv]);
     foreach (i; 0 .. 884)
-        votes ~= Vote([r]);
+        bu.votes ~= Vote([r]);
     foreach (i; 0 .. 8842)
-        votes ~= Vote([sp]);
+        bu.votes ~= Vote([sp]);
     foreach (i; 0 .. 4500)
-        votes ~= Vote([krf]);
+        bu.votes ~= Vote([krf]);
     foreach (i; 0 .. 4324)
-        votes ~= Vote([v]);
+        bu.votes ~= Vote([v]);
     foreach (i; 0 .. 27588)
-        votes ~= Vote([h]);
+        bu.votes ~= Vote([h]);
     foreach (i; 0 .. 35764)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 9;
+        bu.votes ~= Vote([frp]);
 
     /* finnmark */
-    //Vote[] votes;
     foreach (i; 0 .. 16834)
-        votes ~= Vote([ap]);
+        fi.votes ~= Vote([ap]);
     foreach (i; 0 .. 2989)
-        votes ~= Vote([sv]);
+        fi.votes ~= Vote([sv]);
     foreach (i; 0 .. 299)
-        votes ~= Vote([r]);
+        fi.votes ~= Vote([r]);
     foreach (i; 0 .. 1613)
-        votes ~= Vote([sp]);
+        fi.votes ~= Vote([sp]);
     foreach (i; 0 .. 1026)
-        votes ~= Vote([krf]);
+        fi.votes ~= Vote([krf]);
     foreach (i; 0 .. 847)
-        votes ~= Vote([v]);
+        fi.votes ~= Vote([v]);
     foreach (i; 0 .. 3970)
-        votes ~= Vote([h]);
+        fi.votes ~= Vote([h]);
     foreach (i; 0 .. 8277)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 5;
+        fi.votes ~= Vote([frp]);
 
     /* hedmark */
-    //Vote[] votes;
     foreach (i; 0 .. 50855)
-        votes ~= Vote([ap]);
+        he.votes ~= Vote([ap]);
     foreach (i; 0 .. 7078)
-        votes ~= Vote([sv]);
+        he.votes ~= Vote([sv]);
     foreach (i; 0 .. 630)
-        votes ~= Vote([r]);
+        he.votes ~= Vote([r]);
     foreach (i; 0 .. 11096)
-        votes ~= Vote([sp]);
+        he.votes ~= Vote([sp]);
     foreach (i; 0 .. 2652)
-        votes ~= Vote([krf]);
+        he.votes ~= Vote([krf]);
     foreach (i; 0 .. 2650)
-        votes ~= Vote([v]);
+        he.votes ~= Vote([v]);
     foreach (i; 0 .. 10994)
-        votes ~= Vote([h]);
+        he.votes ~= Vote([h]);
     foreach (i; 0 .. 19326)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 8;
+        he.votes ~= Vote([frp]);
 
     /* hordaland */
-    //Vote[] votes;
     foreach (i; 0 .. 81636)
-        votes ~= Vote([ap]);
+        ho.votes ~= Vote([ap]);
     foreach (i; 0 .. 14698)
-        votes ~= Vote([sv]);
+        ho.votes ~= Vote([sv]);
     foreach (i; 0 .. 6794)
-        votes ~= Vote([r]);
+        ho.votes ~= Vote([r]);
     foreach (i; 0 .. 14768)
-        votes ~= Vote([sp]);
+        ho.votes ~= Vote([sp]);
     foreach (i; 0 .. 19138)
-        votes ~= Vote([krf]);
+        ho.votes ~= Vote([krf]);
     foreach (i; 0 .. 12361)
-        votes ~= Vote([v]);
+        ho.votes ~= Vote([v]);
     foreach (i; 0 .. 54066)
-        votes ~= Vote([h]);
+        ho.votes ~= Vote([h]);
     foreach (i; 0 .. 61147)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 15;
+        ho.votes ~= Vote([frp]);
 
     /* møre og romsdal */
-    //Vote[] votes;
     foreach (i; 0 .. 42542)
-        votes ~= Vote([ap]);
+        mo.votes ~= Vote([ap]);
     foreach (i; 0 .. 5279)
-        votes ~= Vote([sv]);
+        mo.votes ~= Vote([sv]);
     foreach (i; 0 .. 653)
-        votes ~= Vote([r]);
+        mo.votes ~= Vote([r]);
     foreach (i; 0 .. 11879)
-        votes ~= Vote([sp]);
+        mo.votes ~= Vote([sp]);
     foreach (i; 0 .. 11713)
-        votes ~= Vote([krf]);
+        mo.votes ~= Vote([krf]);
     foreach (i; 0 .. 5298)
-        votes ~= Vote([v]);
+        mo.votes ~= Vote([v]);
     foreach (i; 0 .. 22356)
-        votes ~= Vote([h]);
+        mo.votes ~= Vote([h]);
     foreach (i; 0 .. 37967)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 9;
+        mo.votes ~= Vote([frp]);
 
     /* nordland */
-    //Vote[] votes;
     foreach (i; 0 .. 50912)
-        votes ~= Vote([ap]);
+        no.votes ~= Vote([ap]);
     foreach (i; 0 .. 10045)
-        votes ~= Vote([sv]);
+        no.votes ~= Vote([sv]);
     foreach (i; 0 .. 1829)
-        votes ~= Vote([r]);
+        no.votes ~= Vote([r]);
     foreach (i; 0 .. 10736)
-        votes ~= Vote([sp]);
+        no.votes ~= Vote([sp]);
     foreach (i; 0 .. 4778)
-        votes ~= Vote([krf]);
+        no.votes ~= Vote([krf]);
     foreach (i; 0 .. 2957)
-        votes ~= Vote([v]);
+        no.votes ~= Vote([v]);
     foreach (i; 0 .. 14905)
-        votes ~= Vote([h]);
+        no.votes ~= Vote([h]);
     foreach (i; 0 .. 31562)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 10;
+        no.votes ~= Vote([frp]);
 
     /* nord-trøndelag */
-    //Vote[] votes;
     foreach (i; 0 .. 31466)
-        votes ~= Vote([ap]);
+        nt.votes ~= Vote([ap]);
     foreach (i; 0 .. 4685)
-        votes ~= Vote([sv]);
+        nt.votes ~= Vote([sv]);
     foreach (i; 0 .. 447)
-        votes ~= Vote([r]);
+        nt.votes ~= Vote([r]);
     foreach (i; 0 .. 11259)
-        votes ~= Vote([sp]);
+        nt.votes ~= Vote([sp]);
     foreach (i; 0 .. 2917)
-        votes ~= Vote([krf]);
+        nt.votes ~= Vote([krf]);
     foreach (i; 0 .. 2119)
-        votes ~= Vote([v]);
+        nt.votes ~= Vote([v]);
     foreach (i; 0 .. 6465)
-        votes ~= Vote([h]);
+        nt.votes ~= Vote([h]);
     foreach (i; 0 .. 12641)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 6;
+        nt.votes ~= Vote([frp]);
 
     /* oppland */
-    //Vote[] votes;
     foreach (i; 0 .. 47728)
-        votes ~= Vote([ap]);
+        op.votes ~= Vote([ap]);
     foreach (i; 0 .. 5367)
-        votes ~= Vote([sv]);
+        op.votes ~= Vote([sv]);
     foreach (i; 0 .. 612)
-        votes ~= Vote([r]);
+        op.votes ~= Vote([r]);
     foreach (i; 0 .. 12912)
-        votes ~= Vote([sp]);
+        op.votes ~= Vote([sp]);
     foreach (i; 0 .. 3182)
-        votes ~= Vote([krf]);
+        op.votes ~= Vote([krf]);
     foreach (i; 0 .. 3103)
-        votes ~= Vote([v]);
+        op.votes ~= Vote([v]);
     foreach (i; 0 .. 11643)
-        votes ~= Vote([h]);
+        op.votes ~= Vote([h]);
     foreach (i; 0 .. 18272)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 7;
+        op.votes ~= Vote([frp]);
 
     /* oslo */
-    //Vote[] votes;
     foreach (i; 0 .. 113103)
-        votes ~= Vote([ap]);
+        os.votes ~= Vote([ap]);
     foreach (i; 0 .. 33205)
-        votes ~= Vote([sv]);
+        os.votes ~= Vote([sv]);
     foreach (i; 0 .. 12917)
-        votes ~= Vote([r]);
+        os.votes ~= Vote([r]);
     foreach (i; 0 .. 3126)
-        votes ~= Vote([sp]);
+        os.votes ~= Vote([sp]);
     foreach (i; 0 .. 8786)
-        votes ~= Vote([krf]);
+        os.votes ~= Vote([krf]);
     foreach (i; 0 .. 20784)
-        votes ~= Vote([v]);
+        os.votes ~= Vote([v]);
     foreach (i; 0 .. 69999)
-        votes ~= Vote([h]);
+        os.votes ~= Vote([h]);
     foreach (i; 0 .. 56953)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 17;
+        os.votes ~= Vote([frp]);
 
     /* rogaland */
-    //Vote[] votes;
     foreach (i; 0 .. 59145)
-        votes ~= Vote([ap]);
+        ro.votes ~= Vote([ap]);
     foreach (i; 0 .. 10609)
-        votes ~= Vote([sv]);
+        ro.votes ~= Vote([sv]);
     foreach (i; 0 .. 908)
-        votes ~= Vote([r]);
+        ro.votes ~= Vote([r]);
     foreach (i; 0 .. 13144)
-        votes ~= Vote([sp]);
+        ro.votes ~= Vote([sp]);
     foreach (i; 0 .. 25541)
-        votes ~= Vote([krf]);
+        ro.votes ~= Vote([krf]);
     foreach (i; 0 .. 10053)
-        votes ~= Vote([v]);
+        ro.votes ~= Vote([v]);
     foreach (i; 0 .. 44289)
-        votes ~= Vote([h]);
+        ro.votes ~= Vote([h]);
     foreach (i; 0 .. 60030)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 13;
+        ro.votes ~= Vote([frp]);
 
     /* sogn og fjordane */
-    //Vote[] votes;
     foreach (i; 0 .. 17375)
-        votes ~= Vote([ap]);
+        so.votes ~= Vote([ap]);
     foreach (i; 0 .. 3418)
-        votes ~= Vote([sv]);
+        so.votes ~= Vote([sv]);
     foreach (i; 0 .. 541)
-        votes ~= Vote([r]);
+        so.votes ~= Vote([r]);
     foreach (i; 0 .. 14782)
-        votes ~= Vote([sp]);
+        so.votes ~= Vote([sp]);
     foreach (i; 0 .. 3984)
-        votes ~= Vote([krf]);
+        so.votes ~= Vote([krf]);
     foreach (i; 0 .. 1952)
-        votes ~= Vote([v]);
+        so.votes ~= Vote([v]);
     foreach (i; 0 .. 7112)
-        votes ~= Vote([h]);
+        so.votes ~= Vote([h]);
     foreach (i; 0 .. 9287)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 5;
+        so.votes ~= Vote([frp]);
 
     /* sør-trøndelag */
-    //Vote[] votes;
     foreach (i; 0 .. 66614)
-        votes ~= Vote([ap]);
+        st.votes ~= Vote([ap]);
     foreach (i; 0 .. 12852)
-        votes ~= Vote([sv]);
+        st.votes ~= Vote([sv]);
     foreach (i; 0 .. 2057)
-        votes ~= Vote([r]);
+        st.votes ~= Vote([r]);
     foreach (i; 0 .. 11803)
-        votes ~= Vote([sp]);
+        st.votes ~= Vote([sp]);
     foreach (i; 0 .. 6189)
-        votes ~= Vote([krf]);
+        st.votes ~= Vote([krf]);
     foreach (i; 0 .. 5871)
-        votes ~= Vote([v]);
+        st.votes ~= Vote([v]);
     foreach (i; 0 .. 22587)
-        votes ~= Vote([h]);
+        st.votes ~= Vote([h]);
     foreach (i; 0 .. 31885)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 10;
+        st.votes ~= Vote([frp]);
 
     /* telemark */
-    //Vote[] votes;
     foreach (i; 0 .. 39296)
-        votes ~= Vote([ap]);
+        te.votes ~= Vote([ap]);
     foreach (i; 0 .. 5020)
-        votes ~= Vote([sv]);
+        te.votes ~= Vote([sv]);
     foreach (i; 0 .. 1147)
-        votes ~= Vote([r]);
+        te.votes ~= Vote([r]);
     foreach (i; 0 .. 5184)
-        votes ~= Vote([sp]);
+        te.votes ~= Vote([sp]);
     foreach (i; 0 .. 6239)
-        votes ~= Vote([krf]);
+        te.votes ~= Vote([krf]);
     foreach (i; 0 .. 2374)
-        votes ~= Vote([v]);
+        te.votes ~= Vote([v]);
     foreach (i; 0 .. 12405)
-        votes ~= Vote([h]);
+        te.votes ~= Vote([h]);
     foreach (i; 0 .. 21708)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 6;
+        te.votes ~= Vote([frp]);
 
     /* troms */
-    //Vote[] votes;
     foreach (i; 0 .. 30942)
-        votes ~= Vote([ap]);
+        tr.votes ~= Vote([ap]);
     foreach (i; 0 .. 6275)
-        votes ~= Vote([sv]);
+        tr.votes ~= Vote([sv]);
     foreach (i; 0 .. 1242)
-        votes ~= Vote([r]);
+        tr.votes ~= Vote([r]);
     foreach (i; 0 .. 7015)
-        votes ~= Vote([sp]);
+        tr.votes ~= Vote([sp]);
     foreach (i; 0 .. 3042)
-        votes ~= Vote([krf]);
+        tr.votes ~= Vote([krf]);
     foreach (i; 0 .. 2150)
-        votes ~= Vote([v]);
+        tr.votes ~= Vote([v]);
     foreach (i; 0 .. 10846)
-        votes ~= Vote([h]);
+        tr.votes ~= Vote([h]);
     foreach (i; 0 .. 21224)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 7;
+        tr.votes ~= Vote([frp]);
 
     /* vest-agder */
-    //Vote[] votes;
     foreach (i; 0 .. 24450)
-        votes ~= Vote([ap]);
+        va.votes ~= Vote([ap]);
     foreach (i; 0 .. 3647)
-        votes ~= Vote([sv]);
+        va.votes ~= Vote([sv]);
     foreach (i; 0 .. 427)
-        votes ~= Vote([r]);
+        va.votes ~= Vote([r]);
     foreach (i; 0 .. 3296)
-        votes ~= Vote([sp]);
+        va.votes ~= Vote([sp]);
     foreach (i; 0 .. 14337)
-        votes ~= Vote([krf]);
+        va.votes ~= Vote([krf]);
     foreach (i; 0 .. 2876)
-        votes ~= Vote([v]);
+        va.votes ~= Vote([v]);
     foreach (i; 0 .. 16214)
-        votes ~= Vote([h]);
+        va.votes ~= Vote([h]);
     foreach (i; 0 .. 25296)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 6;
+        va.votes ~= Vote([frp]);
 
     /* vestfold */
-    //Vote[] votes;
     foreach (i; 0 .. 44169)
-        votes ~= Vote([ap]);
+        ve.votes ~= Vote([ap]);
     foreach (i; 0 .. 8551)
-        votes ~= Vote([sv]);
+        ve.votes ~= Vote([sv]);
     foreach (i; 0 .. 848)
-        votes ~= Vote([r]);
+        ve.votes ~= Vote([r]);
     foreach (i; 0 .. 4257)
-        votes ~= Vote([sp]);
+        ve.votes ~= Vote([sp]);
     foreach (i; 0 .. 6164)
-        votes ~= Vote([krf]);
+        ve.votes ~= Vote([krf]);
     foreach (i; 0 .. 3944)
-        votes ~= Vote([v]);
+        ve.votes ~= Vote([v]);
     foreach (i; 0 .. 25752)
-        votes ~= Vote([h]);
+        ve.votes ~= Vote([h]);
     foreach (i; 0 .. 35687)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 7;
+        ve.votes ~= Vote([frp]);
 
     /* østfold */
-    //Vote[] votes;
     foreach (i; 0 .. 58613)
-        votes ~= Vote([ap]);
+        of.votes ~= Vote([ap]);
     foreach (i; 0 .. 6501)
-        votes ~= Vote([sv]);
+        of.votes ~= Vote([sv]);
     foreach (i; 0 .. 1041)
-        votes ~= Vote([r]);
+        of.votes ~= Vote([r]);
     foreach (i; 0 .. 7250)
-        votes ~= Vote([sp]);
+        of.votes ~= Vote([sp]);
     foreach (i; 0 .. 8589)
-        votes ~= Vote([krf]);
+        of.votes ~= Vote([krf]);
     foreach (i; 0 .. 3739)
-        votes ~= Vote([v]);
+        of.votes ~= Vote([v]);
     foreach (i; 0 .. 22041)
-        votes ~= Vote([h]);
+        of.votes ~= Vote([h]);
     foreach (i; 0 .. 38853)
-        votes ~= Vote([frp]);
-    //immutable maxSeats = 9;
+        of.votes ~= Vote([frp]);
 
+    Vote[] votes;
+    foreach (district; districts)
+        votes ~= district.votes;
 
+    /* distribute seats to parties */
     immutable maxSeats = 169;
-
+    immutable election_threshold = 0.014; // not to be confused with first divisor in modified sainte-lague
+    ulong[Party] partyVotes;
+    ulong[Party] partySeats;
     while (true) {
         /* tally votes */
-        foreach (candidate; candidates) {
-            candidate.votes = 0;
-            candidate.seats = 0;
+        foreach (party; parties) {
+            partyVotes[party] = 0;
+            partySeats[party] = 0;
         }
         foreach (vote; votes) {
-            foreach (candidate; vote.candidates) {
-                if (candidate.excluded)
+            foreach (party; vote.parties) {
+                if (party.excluded)
                     continue;
-                ++candidate.votes;
-                break;
+                ++partyVotes[party];
             }
         }
 
         /* assign seats */
         foreach (seats; 0 .. maxSeats) {
-            Candidate winner = candidates[0];
-            foreach (candidate; candidates[1 .. $]) {
-                if (winner.excluded || winner.votes / (winner.seats == 0 ? 1.4 : 2 * winner.seats + 1) < candidate.votes / (candidate.seats == 0 ? 1.4 : 2 * candidate.seats + 1))
-                    winner = candidate;
+            Party winner = parties[0];
+            foreach (party; parties[1 .. $]) {
+                if (partyVotes[winner] < election_threshold * votes.length || partyVotes[winner] / (2 * partySeats[winner] + 1) < partyVotes[party] / (2 * partySeats[party] + 1))
+                    winner = party;
             }
-            ++winner.seats;
-            writefln("Assigning seat to %s", winner.name);
+            ++partySeats[winner];
+            //writefln("Assigning seat to %s", winner.name);
         }
 
         /* print result so far */
         writeln();
         writeln("Result:");
-        foreach (candidate; candidates)
-            writefln("%15.15s: %2s, excluded: %s", candidate.name, candidate.seats, candidate.excluded);
+        foreach (party; parties)
+            writefln("%15.15s: %2s seats, %7s votes, excluded: %s", party.name, partySeats[party], partyVotes[party], party.excluded);
 
-        /* check if all candidates got a seat, if not, exclude candidate with fewest votes */
-        Candidate exclude = candidates[0];
-        foreach (candidate; candidates) {
-            if (candidate.excluded || candidate.seats > 0)
+        /* check if all parties got a seat, if not, exclude party with fewest votes */
+        Party exclude = parties[0];
+        foreach (party; parties[1 .. $]) {
+            if (partySeats[party] > 0)
                 continue;
-            if (exclude.excluded || exclude.seats > 0 || exclude.votes > candidate.votes)
-                exclude = candidate;
+            if (exclude.excluded || partyVotes[exclude] > partyVotes[party])
+                exclude = party;
         }
-        if (!exclude.excluded && exclude.seats == 0) {
+        if (!exclude.excluded) {
             exclude.excluded = true;
             writefln("Excluding %s as they received no seats and got fewest votes", exclude.name);
         } else {
@@ -468,4 +487,86 @@ void main() {
             break;
         }
     }
+
+    /* now distribute seats to districts */
+    /* first tally votes for districts */
+    ulong[Party][District] districtPartyVotes;
+    ulong[Party][District] districtPartySeats;
+    ulong seatsLeft = maxSeats;
+    ulong districtSeatsLeft[District];
+    foreach (district; districts) {
+        districtSeatsLeft[district] = district.seats;
+        foreach (party; parties) {
+            districtPartyVotes[district][party] = 0;
+            districtPartySeats[district][party] = 0;
+        }
+        foreach (vote; district.votes) {
+            foreach (party; vote.parties) {
+                if (party.excluded)
+                    continue;
+                ++districtPartyVotes[district][party];
+                break;
+            }
+        }
+    }
+    /* then assign seats, giving every party their first seat, then every party their second seat, etc, skipping parties who already have received all their seats.
+       using sainte-lague here as well, parties get a seat in the district where the party got the highest (partyVotes / (2 * partySeats + 1))
+       districts who've filled all their seats are of course skipped.
+     */
+    /* TODO: need a better way to decide which order to distribute seats.
+       currently we're giving one seat to each party every round (then skip parties who run out of seats),
+       but this leads to great difference in vote % and seat % for some parties, for example arbeiderpartiet in oslo.
+       idea:
+       - use sainte-lague on partyVotes and decide order to distribute seats
+     */
+    /* TODO: party should rather get seats ordered by something like ((partyVotes / 2 * partySeats + 1) / districtVotes).
+       otherwise a large district with 1000 of 100000 (1% of the votes) would get party seat before a small district with 999 of 9990 (10% of the votes)
+     */
+    while (seatsLeft > 0) {
+        foreach (party; parties) {
+            if (partySeats[party] == 0)
+                continue;
+            District winner = districts[0];
+            foreach (district; districts[1 .. $]) {
+                if (districtSeatsLeft[district] == 0)
+                    continue;
+                if (districtSeatsLeft[winner] == 0 || districtPartyVotes[winner][party] / (2 * districtPartySeats[winner][party] + 1) < districtPartyVotes[district][party] / (2 * districtPartySeats[district][party] + 1))
+                    winner = district;
+            }
+            //writefln("Assigning seat to %s in %s", party.name, winner.name);
+            ++districtPartySeats[winner][party];
+            --districtSeatsLeft[winner];
+            --partySeats[party];
+            --seatsLeft;
+        }
+    }
+
+    /* print result */
+    writeln();
+    write("                 ");
+    foreach (party; parties)
+        writef("| %3.3s ", party.name);
+    writeln();
+    write("-----------------");
+    foreach (party; parties)
+        write("+-----");
+    writeln();
+    foreach (district; districts) {
+        writef(" %15.15s ", district.name);
+        foreach (party; parties) {
+            writef("| %3s ", districtPartySeats[district][party]);
+        }
+        writeln();
+    }
+    write("-----------------");
+    foreach (party; parties)
+        write("+-----");
+    writeln();
+    writef(" %15.15s ", "Total");
+    foreach (party; parties) {
+        foreach (district; districts)
+            partySeats[party] += districtPartySeats[district][party];
+        writef("| %3s ", partySeats[party]);
+    }
+    writeln();
 }
