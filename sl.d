@@ -437,7 +437,7 @@ void main() {
 
     /* distribute seats to parties */
     immutable maxSeats = 169;
-    immutable election_threshold = 0.014; // not to be confused with first divisor in modified sainte-lague
+    immutable election_threshold = 0.0; // 0.014; // not to be confused with first divisor in modified sainte-lague
     ulong[Party] partyVotes;
     ulong[Party] partySeats;
     while (true) {
@@ -479,7 +479,7 @@ void main() {
             if (exclude.excluded || partyVotes[exclude] > partyVotes[party])
                 exclude = party;
         }
-        if (!exclude.excluded) {
+        if (!exclude.excluded && partySeats[exclude] == 0) {
             exclude.excluded = true;
             writefln("Excluding %s as they received no seats and got fewest votes", exclude.name);
         } else {
@@ -509,36 +509,29 @@ void main() {
             }
         }
     }
-    /* then assign seats, giving every party their first seat, then every party their second seat, etc, skipping parties who already have received all their seats.
-       using sainte-lague here as well, parties get a seat in the district where the party got the highest (partyVotes / (2 * partySeats + 1))
-       districts who've filled all their seats are of course skipped.
-     */
-    /* TODO: need a better way to decide which order to distribute seats.
-       currently we're giving one seat to each party every round (then skip parties who run out of seats),
-       but this leads to great difference in vote % and seat % for some parties, for example arbeiderpartiet in oslo.
-       idea:
-       - use sainte-lague on partyVotes and decide order to distribute seats
-     */
-    /* TODO: party should rather get seats ordered by something like ((partyVotes / 2 * partySeats + 1) / districtVotes).
-       otherwise a large district with 1000 of 100000 (1% of the votes) would get party seat before a small district with 999 of 9990 (10% of the votes)
-     */
+    /* then assign seats, ordered by reversed sainte-lague giving smaller parties first seats, skipping parties who already have received all their seats.
+       using sainte-lague here as well, parties get a seat in the district where the party got the highest (districtPartyVotes / districtVotes / (2 * districtPartySeats + 1))
+       districts who've filled all their seats are of course skipped. */
     while (seatsLeft > 0) {
-        foreach (party; parties) {
+        Party pWinner = parties[0];
+        foreach (party; parties[1 .. $]) {
             if (partySeats[party] == 0)
                 continue;
-            District winner = districts[0];
-            foreach (district; districts[1 .. $]) {
-                if (districtSeatsLeft[district] == 0)
-                    continue;
-                if (districtSeatsLeft[winner] == 0 || districtPartyVotes[winner][party] / (2 * districtPartySeats[winner][party] + 1) < districtPartyVotes[district][party] / (2 * districtPartySeats[district][party] + 1))
-                    winner = district;
-            }
-            //writefln("Assigning seat to %s in %s", party.name, winner.name);
-            ++districtPartySeats[winner][party];
-            --districtSeatsLeft[winner];
-            --partySeats[party];
-            --seatsLeft;
+            if (partySeats[pWinner] == 0 || partyVotes[pWinner] / (2 * partySeats[pWinner] + 1) > partyVotes[party] / (2 * partySeats[party] + 1))
+                pWinner = party;
         }
+        District dWinner = districts[0];
+        foreach (district; districts[1 .. $]) {
+            if (districtSeatsLeft[district] == 0)
+                continue;
+            if (districtSeatsLeft[dWinner] == 0 || cast(real) districtPartyVotes[dWinner][pWinner] / cast(real) dWinner.votes.length / cast(real) (2 * districtPartySeats[dWinner][pWinner] + 1) < cast(real) districtPartyVotes[district][pWinner] / cast(real) district.votes.length / cast(real) (2 * districtPartySeats[district][pWinner] + 1))
+                dWinner = district;
+        }
+        writefln("Assigning seat to %s in %s", pWinner.name, dWinner.name);
+        ++districtPartySeats[dWinner][pWinner];
+        --districtSeatsLeft[dWinner];
+        --partySeats[pWinner];
+        --seatsLeft;
     }
 
     /* print result */
