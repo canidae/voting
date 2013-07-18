@@ -4,7 +4,6 @@ import std.stdio;
 class Party {
     string name;
     bool excluded = false;
-    ulong maxSeats; // party may not win any more seats than this
 
     this(string name) {
         this.name = name;
@@ -552,124 +551,87 @@ void main() {
     foreach (i; 0 .. 1320)
         of.votes ~= Vote([pp]);
 
-    Vote[] votes;
-    foreach (district; districts)
-        votes ~= district.votes;
 
-    /* distribute seats to parties */
-    /* TODO: a party may not win more seats than the sum of available seats in districts where the party is represented.
-             it is extremely unlikely for a party to win more seats than this, but it needs to be handled */
-    /* TODO: if two parties are both only represented in a 1-seat district, then both parties can not win a seat (there are more combinations of this issue)
-             also extremely unlikely, but still needs to be handled */
-    immutable maxSeats = 169;
-    immutable election_threshold = 0.0; //0.014; // not to be confused with first divisor in modified sainte-lague
-    ulong[Party] partyVotes;
-    ulong[Party] partySeats;
-    Party[] seatOrder;
-    while (true) {
-        /* tally votes */
-        foreach (party; parties) {
-            partyVotes[party] = 0;
-            partySeats[party] = 0;
-        }
-        foreach (vote; votes) {
-            foreach (party; vote.parties) {
-                if (party.excluded)
-                    continue;
-                ++partyVotes[party];
-            }
-        }
+    /* TODO: preferential, rerun entire thing when one or more parties got no seats, exclude party with fewest votes */
 
-        /* assign seats */
-        foreach (seats; 0 .. maxSeats) {
-            Party winner = parties[0];
-            foreach (party; parties[1 .. $]) {
-                if (partyVotes[winner] < election_threshold * votes.length || partyVotes[winner] / (2 * partySeats[winner] + 1) < partyVotes[party] / (2 * partySeats[party] + 1))
-                    winner = party;
-            }
-            ++partySeats[winner];
-            seatOrder ~= winner;
-            writefln("Assigning seat to %s", winner.name);
-        }
-
-        /* print result so far */
-        writeln();
-        writeln("Result:");
-        foreach (party; parties)
-            writefln("%15.15s: %2s seats, %7s votes, excluded: %s", party.name, partySeats[party], partyVotes[party], party.excluded);
-
-        /* check if all parties got a seat, if not, exclude party with fewest votes */
-        Party exclude = parties[0];
-        foreach (party; parties[1 .. $]) {
-            if (partySeats[party] > 0)
-                continue;
-            if (exclude.excluded || partyVotes[exclude] > partyVotes[party])
-                exclude = party;
-        }
-        if (!exclude.excluded && partySeats[exclude] == 0) {
-            exclude.excluded = true;
-            writefln("Excluding %s as they received no seats and got fewest votes", exclude.name);
-        } else {
-            /* we're done here */
-            break;
-        }
-    }
-
-    /* now distribute seats to districts */
-    /* first tally votes for districts */
-    ulong[Party][District] districtPartyVotes;
+    /* tally district votes and reset counters */
+    real[Party][District] districtPartyVotes;
     ulong[Party][District] districtPartySeats;
-    ulong seatsLeft = maxSeats;
-    ulong districtSeatsLeft[District];
+    ulong[District] districtSeats;
+    ulong[Party] partySeats;
     foreach (district; districts) {
-        districtSeatsLeft[district] = district.seats;
+        districtSeats[district] = 0;
         foreach (party; parties) {
             districtPartyVotes[district][party] = 0;
             districtPartySeats[district][party] = 0;
+            partySeats[party] = 0;
         }
         foreach (vote; district.votes) {
             foreach (party; vote.parties) {
-                if (party.excluded)
-                    continue;
                 ++districtPartyVotes[district][party];
                 break;
             }
         }
-        foreach (party; parties) {
-    		if (districtPartyVotes[party] > 0)
-                party.maxSeats += district.seats;
-        }
     }
-    foreach (party; parties) {
-        if (partySeats[party] > party.maxSeats) {
-            writefln("%s won more seats than they can fill!", party.name);
-            return;
-        }
-    }
-    /* then assign seats, in the reverse order the seats were won.
-       using sainte-lague to decide where the party receive their seats, parties get a seat in the district where the party got the highest (districtPartyVotes / districtVotes / (2 * districtPartySeats + 1))
-       districts who've filled all their seats are of course skipped. */
-    while (seatsLeft > 0) {
-        Party pWinner = seatOrder[$ - 1];
-        seatOrder = seatOrder[0 .. $ - 1];
+
+    /* assign seats */
+    real first_divisor = 1.0;
+    foreach (seat; 0 .. 169) {
+        /* find biggest win, the district where a party got the highest quotient (sainte-lague'd vote percentage) */
         District dWinner;
+        Party pWinner;
         foreach (district; districts) {
-            if (districtSeatsLeft[district] == 0)
-                continue;
-            if (districtPartyVotes[district][pWinner] == 0)
-                continue; // no votes for party in district (more correct would be to check if party got a list in district, even though winning without any votes in district would be peculiar)
-            if (dWinner is null || cast(real) districtPartyVotes[dWinner][pWinner] / cast(real) dWinner.votes.length / cast(real) (2 * districtPartySeats[dWinner][pWinner] + 1) < cast(real) districtPartyVotes[district][pWinner] / cast(real) district.votes.length / cast(real) (2 * districtPartySeats[district][pWinner] + 1))
-                dWinner = district;
+            if (district.seats == districtSeats[district])
+                continue; // all seats in this district are assigned
+            foreach (party; parties) {
+                if (dWinner is null && pWinner is null) {
+                    dWinner = district;
+                    pWinner = party;
+                    continue;
+                }
+                real winnerDivisor = districtPartySeats[dWinner][pWinner] == 0 ? first_divisor : cast(real) (2 * districtPartySeats[dWinner][pWinner] + 1);
+                real contenderDivisor = districtPartySeats[district][party] == 0 ? first_divisor : cast(real) (2 * districtPartySeats[district][party] + 1);
+                if (districtPartyVotes[dWinner][pWinner] / cast(real) dWinner.votes.length / winnerDivisor < districtPartyVotes[district][party] / cast(real) district.votes.length / contenderDivisor) {
+                    dWinner = district;
+                    pWinner = party;
+                }
+            }
         }
-        if (dWinner is null) {
-            writefln("ERROR! There are no eligible districts for %s to win a seat!", pWinner.name);
+        if (dWinner is null || pWinner is null) {
+            writeln("No district or party? Strange, something is wrong!");
             return;
         }
-        writefln("Assigning seat to %s in %s", pWinner.name, dWinner.name);
+
+        ++partySeats[pWinner];
+        ++districtSeats[dWinner];
         ++districtPartySeats[dWinner][pWinner];
-        --districtSeatsLeft[dWinner];
-        --seatsLeft;
+        writefln("%s (seats: %s) won a seat in %s (%s of %s seats remaining)", pWinner.name, partySeats[pWinner], dWinner.name, dWinner.seats - districtSeats[dWinner], dWinner.seats);
+        if (districtSeats[dWinner] == dWinner.seats) {
+            /* no more seats in district, distribute votes evenly to other districts */
+            writefln("No more seats left in %s", dWinner.name);
+            foreach (party; parties) {
+                if (districtPartySeats[dWinner][party] > 0 || districtPartyVotes[dWinner][party] == 0)
+                    continue; // party won seats in district or no votes for party, no redistribution of the votes
+                ulong districtsLeft = 0;
+                foreach (district; districts) {
+                    if (districtSeats[district] < district.seats && districtPartyVotes[district][party] > 0)
+                        ++districtsLeft;
+                }
+                if (districtsLeft > 0) {
+                    real redistribute = districtPartyVotes[dWinner][party] / cast(real) districtsLeft;
+                    writefln("%s won no seats in %s, redistributing %s votes to %s other district where party got list and there are seats remaining", party.name, dWinner.name, redistribute, districtsLeft);
+                    foreach (district; districts) {
+                        if (districtSeats[district] < district.seats && districtPartyVotes[district][party] > 0)
+                            districtPartyVotes[district][party] += redistribute;
+                    }
+                } else {
+                    writefln("Nowhere to redistribute %s votes for %s, votes discarded", districtPartyVotes[dWinner][party], party.name);
+                }
+            }
+        }
     }
+
+    /* TODO: exclude party with 0 seats and least votes (if any), move votes to next preference, rerun */
 
     /* print result */
     writeln();
@@ -683,9 +645,8 @@ void main() {
     writeln();
     foreach (district; districts) {
         writef(" %15.15s ", district.name);
-        foreach (party; parties) {
+        foreach (party; parties)
             writef("| %3s ", districtPartySeats[district][party]);
-        }
         writeln();
     }
     write("-----------------");
