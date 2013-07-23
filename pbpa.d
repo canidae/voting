@@ -551,7 +551,8 @@ void main() {
     foreach (i; 0 .. 1320)
         of.votes ~= Vote([pp]);
 
-    immutable totalSeats = 169;
+    immutable maxSeats = 169;
+    immutable election_threshold = 0.0; //0.014; // not to be confused with first divisor in modified sainte-lague
 
     /* TODO: preferential, rerun entire thing when one or more parties got no seats, exclude party with fewest votes */
 
@@ -581,18 +582,26 @@ void main() {
         }
     }
 
-    /* calculate party seats and min/max divisors */
-    real divisor = cast(real) voteCount / cast(real) totalSeats;
+    /* assign seats */
+    foreach (seats; 0 .. maxSeats) {
+        Party winner = parties[0];
+        foreach (party; parties[1 .. $]) {
+            if (partyVotes[winner] < election_threshold * voteCount || partyVotes[winner] / (2 * partySeats[winner] + 1) < partyVotes[party] / (2 * partySeats[party] + 1))
+                winner = party;
+        }
+        ++partySeats[winner];
+        writefln("Assigning seat to %s", winner.name);
+    }
+    /* TODO: exclude party with 0 seats/below threshold and least votes (if any), move votes to next preference, rerun */
+
+    /* calculate initial party seats in districts and min/max divisors */
+    real divisor = cast(real) voteCount / cast(real) maxSeats;
     writefln("Divisor: %s", divisor);
     real[Party] minPartyDivisor;
     real[Party] maxPartyDivisor;
     real[District] minDistrictDivisor;
     real[District] maxDistrictDivisor;
-    ulong seatCount = 0;
     foreach (party; parties) {
-        partySeats[party] = cast(int) (cast(real) partyVotes[party] / divisor + 0.5);
-        writefln("%s won %s seats", party.name, partySeats[party]);
-        seatCount += partySeats[party];
         minPartyDivisor[party] = 0.0 - partyVotes[party]; // just need a value lower than the maximum value, this will do
         maxPartyDivisor[party] = partyVotes[party]; // just need a value higher than the minimum value, this will do
         foreach (district; districts) {
@@ -606,38 +615,44 @@ void main() {
         }
         writefln("Min/Max divisors for %s: %s/%s", party.name, minPartyDivisor[party], maxPartyDivisor[party]);
     }
-    writefln("Seats assigned: %s", seatCount); // TODO: what if this doesn't match totalSeats? can it mismatch?
 
 
-    /* TODO: exclude party with 0 seats and least votes (if any), move votes to next preference, rerun */
 
     /* print result */
     writeln();
-    write("                 ");
+    write("                  ");
     foreach (party; parties)
-        writef("| %3.3s ", party.name);
-    write("| Tot ");
-    writeln();
-    write("-----------------");
+        writef("| %7.7s ", party.name);
+    writefln("| %7.7s", "Total");
+    write("------------------");
     foreach (party; parties)
-        write("+-----");
-    write("+-----");
+        write("+---------");
+    write("+---------");
     writeln();
+    ulong totalSeatCount;
     foreach (district; districts) {
-        writef(" %15.15s ", district.name);
-        foreach (party; parties)
-            writef("| %3s ", districtPartySeats[district][party]);
-        writef("| %3s ", district.seats);
+        writef(" %16.16s ", district.name);
+        ulong districtSeatCount;
+        foreach (party; parties) {
+            writef("| %7s ", districtPartySeats[district][party]);
+            districtSeatCount += districtPartySeats[district][party];
+        }
+        writef("| %3s/%3s ", districtSeatCount, district.seats);
         writeln();
+        totalSeatCount += districtSeatCount;
     }
-    write("-----------------");
+    write("------------------");
     foreach (party; parties)
-        write("+-----");
-    write("+-----");
+        write("+---------");
+    write("+---------");
     writeln();
-    writef(" %15.15s ", "Total");
-    foreach (party; parties)
-        writef("| %3s ", partySeats[party]);
-    writef("| %3s ", seatCount);
+    writef(" %16.16s ", "Total");
+    foreach (party; parties) {
+        ulong partySeatCount;
+        foreach (district; districts)
+            partySeatCount += districtPartySeats[district][party];
+        writef("| %3s/%3s ", partySeatCount, partySeats[party]);
+    }
+    writef("| %3s/%3s ", totalSeatCount, maxSeats);
     writeln();
 }
