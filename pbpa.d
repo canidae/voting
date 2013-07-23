@@ -554,10 +554,16 @@ void main() {
     immutable maxSeats = 169;
     immutable election_threshold = 0.0; //0.014; // not to be confused with first divisor in modified sainte-lague
 
-    /* TODO: preferential, rerun entire thing when one or more parties got no seats, exclude party with fewest votes */
+    /* http://www.uusikaupunki.fi/~olsalmi/vaalit/Biproportional_Elections.html
+       - Pij = votes[district][party]
+       - Hij = seats[district][party]
+       - Bij = unrounded quotient[district][party]
+     */
+
+    /* TODO: preferential, rerun tally ans assign seats (upper apportionment) when one or more parties got no seats, exclude party with fewest votes */
 
     /* tally district votes and reset counters */
-    real[Party][District] districtPartyVotes;
+    ulong[Party][District] districtPartyVotes;
     ulong[Party][District] districtPartySeats;
     ulong[Party] partyVotes;
     ulong[Party] partySeats;
@@ -582,17 +588,38 @@ void main() {
         }
     }
 
-    /* assign seats */
+    /* assign seats (upper apportionment) */
     foreach (seats; 0 .. maxSeats) {
         Party winner = parties[0];
         foreach (party; parties[1 .. $]) {
-            if (partyVotes[winner] < election_threshold * voteCount || partyVotes[winner] / (2 * partySeats[winner] + 1) < partyVotes[party] / (2 * partySeats[party] + 1))
+            if (partyVotes[winner] < election_threshold * voteCount || partyVotes[winner] / (partySeats[winner] + 0.5) < partyVotes[party] / (partySeats[party] + 0.5))
                 winner = party;
         }
         ++partySeats[winner];
         writefln("Assigning seat to %s", winner.name);
     }
-    /* TODO: exclude party with 0 seats/below threshold and least votes (if any), move votes to next preference, rerun */
+    /* TODO: end preferential rerun */
+
+    /* lower apportionment */
+    /* set initial divisors */
+    real[Party] partyDivisors;
+    real[District] districtDivisors;
+    foreach (party; parties)
+        partyDivisors[party] = 1.0; // initial party divisor is always set to 1.0
+    foreach (district; districts)
+        districtDivisors[district] = 1.0; // i have no clue what this should be set to (well, i have some clue, but i don't like it yet)
+
+    /* assign seats in districts, which likely will be wrong, but corrected in later stages */
+    foreach (district; districts) {
+        foreach (seat; 0 .. district.seats) {
+            Party winner = parties[0];
+            foreach (party; parties[1 .. $]) {
+                if (districtPartyVotes[district][winner] / (districtPartySeats[district][winner] + 0.5) < districtPartyVotes[district][party] / (districtPartySeats[district][party] + 0.5))
+                    winner = party;
+            }
+            ++districtPartySeats[district][winner];
+        }
+    }
 
     /* calculate initial party seats in districts and min/max divisors */
     real divisor = cast(real) voteCount / cast(real) maxSeats;
