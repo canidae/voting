@@ -3,6 +3,7 @@ import std.stdio;
 
 class Party {
     string name;
+    ulong seats; // seats assigned in upper apportionment
     bool excluded = false;
 
     this(string name) {
@@ -12,7 +13,7 @@ class Party {
 
 class District {
     string name;
-    ulong seats;
+    ulong seats; // seats assigned in upper apportionment
     Vote[] votes;
 
     this(string name, ulong seats) {
@@ -566,15 +567,12 @@ void main() {
     ulong[Party][District] districtPartyVotes;
     ulong[Party][District] districtPartySeats;
     ulong[Party] partyVotes;
-    ulong[Party] partySeats;
-    ulong[District] districtSeats;
     ulong voteCount;
     foreach (district; districts) {
-        districtSeats[district] = 0;
         foreach (party; parties) {
             districtPartyVotes[district][party] = 0;
             districtPartySeats[district][party] = 0;
-            partySeats[party] = 0;
+            party.seats = 0;
         }
         foreach (vote; district.votes) {
             foreach (party; vote.parties) {
@@ -592,24 +590,16 @@ void main() {
     foreach (seats; 0 .. maxSeats) {
         Party winner = parties[0];
         foreach (party; parties[1 .. $]) {
-            if (partyVotes[winner] < election_threshold * voteCount || partyVotes[winner] / (partySeats[winner] + 0.5) < partyVotes[party] / (partySeats[party] + 0.5))
+            if (partyVotes[winner] < election_threshold * voteCount || partyVotes[winner] / (winner.seats + 0.5) < partyVotes[party] / (party.seats + 0.5))
                 winner = party;
         }
-        ++partySeats[winner];
+        ++winner.seats;
         writefln("Assigning seat to %s", winner.name);
     }
     /* TODO: end preferential rerun */
 
     /* lower apportionment */
-    /* set initial divisors */
-    real[Party] partyDivisors;
-    real[District] districtDivisors;
-    foreach (party; parties)
-        partyDivisors[party] = 1.0; // initial party divisor is always set to 1.0
-    foreach (district; districts)
-        districtDivisors[district] = 1.0; // i have no clue what this should be set to (well, i have some clue, but i don't like it yet)
-
-    /* assign seats in districts, which likely will be wrong, but corrected in later stages */
+    /* assign initial seats in districts, which likely will be wrong, but corrected in later stages */
     foreach (district; districts) {
         foreach (seat; 0 .. district.seats) {
             Party winner = parties[0];
@@ -621,27 +611,68 @@ void main() {
         }
     }
 
-    /* calculate initial party seats in districts and min/max divisors */
-    real divisor = cast(real) voteCount / cast(real) maxSeats;
-    writefln("Divisor: %s", divisor);
-    real[Party] minPartyDivisor;
-    real[Party] maxPartyDivisor;
-    real[District] minDistrictDivisor;
-    real[District] maxDistrictDivisor;
-    foreach (party; parties) {
-        minPartyDivisor[party] = 0.0 - partyVotes[party]; // just need a value lower than the maximum value, this will do
-        maxPartyDivisor[party] = partyVotes[party]; // just need a value higher than the minimum value, this will do
-        foreach (district; districts) {
-            districtPartySeats[district][party] = cast(int) (cast(real) districtPartyVotes[district][party] / divisor + 0.5);
-            real partyDivisor = (districtPartySeats[district][party] - 0.5) * divisor / districtPartyVotes[district][party];
-            if (partyDivisor > minPartyDivisor[party])
-                minPartyDivisor[party] = partyDivisor;
-            partyDivisor = (districtPartySeats[district][party] + 0.5) * divisor / districtPartyVotes[district][party];
-            if (partyDivisor < maxPartyDivisor[party])
-                maxPartyDivisor[party] = partyDivisor;
+    /* set initial divisors */
+    real[Party] partyDivisors;
+    real[District] districtDivisors;
+    foreach (party; parties)
+        partyDivisors[party] = 1.0; // initial party divisor is always set to 1.0
+    foreach (district; districts) {
+        // divisor for party should initially be the average of:
+        // "votes / (seats - 0.5)" for the latest assigned seat
+        // "votes / (seats + 0.5)" for the second latest assigned seat
+        real minDivisor = real.min;
+        real maxDivisor = real.max;
+        foreach (party; parties) {
+            if (districtPartySeats[district][party] == 0)
+                continue;
+            if (districtPartyVotes[district][party] / (districtPartySeats[district][party] + 0.5) > minDivisor)
+                minDivisor = districtPartyVotes[district][party] / (districtPartySeats[district][party] + 0.5);
+            if (districtPartyVotes[district][party] / (districtPartySeats[district][party] - 0.5) < maxDivisor)
+                maxDivisor = districtPartyVotes[district][party] / (districtPartySeats[district][party] - 0.5);
         }
-        writefln("Min/Max divisors for %s: %s/%s", party.name, minPartyDivisor[party], maxPartyDivisor[party]);
+        districtDivisors[district] = (minDivisor + maxDivisor) / 2;
+        writefln("Initial divisor for %-16s: %7.02f (min: %7.02f max: %7.02f)", district.name, districtDivisors[district], minDivisor, maxDivisor);
     }
+
+    /* correction stages */
+    bool modifyPartyDivisors = true; // toggle between modifying party and district divisors
+
+    /* calculate party seats in districts using divisors */
+    ulong[Party] partySeats;
+    ulong[District] districtSeats;
+    foreach (party; parties)
+        partySeats[party] = 0;
+    foreach (district; districts)
+        districtSeats[district] = 0;
+    foreach (party; parties) {
+        foreach (district; districts) {
+            districtPartySeats[district][party] = cast(int) (districtPartyVotes[district][party] / partyDivisors[party] / districtDivisors[district] + 0.5);
+            districtSeats[district] += districtPartySeats[district][party];
+            partySeats[party] += districtPartySeats[district][party];
+        }
+    }
+
+    /* check if seats are correctly apportioned */
+    if (modifyPartyDivisors) {
+        foreach (party; parties) {
+            if (party.seats == partySeats[party])
+                continue; // this party got the right amount of seats, no need to modify divisor
+            real minDivisor = real.max;
+            real maxDivisor = real.min;
+            foreach (district; districts) {
+                // TODO: but what when districtPartySeats[district][party] is 0? then this stuff goes nuts
+                real tmpDivisor = districtPartyVotes[district][party] / partyDivisors[party] / districtDivisors[district];
+                writefln("%16s divisor for %5s: %7.02f", district.name, party.name, tmpDivisor);
+                if (tmpDivisor / (districtPartySeats[district][party] - 0.5) < minDivisor)
+                    minDivisor = tmpDivisor / (districtPartySeats[district][party] - 0.5);
+                if (tmpDivisor / (districtPartySeats[district][party] + 0.5) > maxDivisor)
+                    maxDivisor = tmpDivisor / (districtPartySeats[district][party] + 0.5);
+            }
+            writefln("Min/Max/Avg divisors for %s: %7.02f/%7.02f/%7.02f", party.name, minDivisor, maxDivisor, (minDivisor + maxDivisor) / 2.0);
+        }
+    } else {
+    }
+    modifyPartyDivisors = !modifyPartyDivisors;
 
 
 
@@ -678,7 +709,7 @@ void main() {
         ulong partySeatCount;
         foreach (district; districts)
             partySeatCount += districtPartySeats[district][party];
-        writef("| %3s/%3s ", partySeatCount, partySeats[party]);
+        writef("| %3s/%3s ", partySeatCount, party.seats);
     }
     writef("| %3s/%3s ", totalSeatCount, maxSeats);
     writeln();
