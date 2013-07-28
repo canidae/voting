@@ -611,7 +611,7 @@ void main() {
     ulong[Party] partySeats;
     ulong[District] districtSeats;
     bool modifyPartyMultipliers = true;
-    foreach (replacewithwhileandbreak; 0 .. 35) {
+    while (true) {
         foreach (party; parties)
             partySeats[party] = 0;
         foreach (district; districts)
@@ -622,6 +622,22 @@ void main() {
                 districtSeats[district] += tmpSeats;
                 partySeats[party] += tmpSeats;
             }
+        }
+        /* are we finished? */
+        bool finished = true;
+        foreach (party; parties) {
+            finished = party.seats == partySeats[party];
+            if (!finished)
+                break;
+        }
+        if (finished) {
+            foreach (district; districts) {
+                finished = district.seats == districtSeats[district];
+                if (!finished)
+                    break;
+            }
+            if (finished)
+                break; // we're done, break out of loop
         }
 
         /* check if seats are correctly apportioned */
