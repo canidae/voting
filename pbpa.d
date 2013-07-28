@@ -4,7 +4,7 @@ import std.stdio;
 class Party {
     string name;
     ulong seats; // seats assigned in upper apportionment
-    bool excluded = false;
+    bool excluded;
 
     this(string name) {
         this.name = name;
@@ -553,43 +553,66 @@ void main() {
         of.votes ~= Vote([pp]);
 
     immutable maxSeats = 169;
-    immutable election_threshold = 0.0; //0.014; // not to be confused with first multiplier in modified sainte-lague
+    immutable first_divisor = 1.0; // first divisor in modified sainte-lague, arguably not necessary.
+    immutable seat_threshold = 0; // the minimum amount of seats a party must win
 
-    /* TODO: preferential, rerun tally ans assign seats (upper apportionment) when one or more parties got no seats, exclude party with fewest votes */
     /* tally district votes and reset counters */
     ulong[Party][District] districtPartyVotes;
     real[Party][District] districtPartySeats;
     ulong[Party] partyVotes;
     ulong voteCount;
-    foreach (district; districts) {
-        foreach (party; parties) {
-            districtPartyVotes[district][party] = 0;
-            districtPartySeats[district][party] = 0;
-            party.seats = 0;
-        }
-        foreach (vote; district.votes) {
-            foreach (party; vote.parties) {
-                if (party.excluded)
-                    continue;
-                ++districtPartyVotes[district][party];
-                ++partyVotes[party];
-                ++voteCount;
-                break;
+    while (true) {
+        voteCount = 0;
+        foreach (district; districts) {
+            foreach (party; parties) {
+                districtPartyVotes[district][party] = 0;
+                districtPartySeats[district][party] = 0;
+                party.seats = 0;
+            }
+            foreach (vote; district.votes) {
+                foreach (party; vote.parties) {
+                    if (party.excluded)
+                        continue; // party did not receive enough votes and has been removed
+                    ++districtPartyVotes[district][party];
+                    ++partyVotes[party];
+                    ++voteCount;
+                    break;
+                }
             }
         }
-    }
 
-    /* assign seats (upper apportionment) */
-    foreach (seats; 0 .. maxSeats) {
-        Party winner = parties[0];
-        foreach (party; parties[1 .. $]) {
-            if (partyVotes[winner] < election_threshold * voteCount || partyVotes[winner] / (winner.seats + 0.5) < partyVotes[party] / (party.seats + 0.5))
-                winner = party;
+        /* assign seats (upper apportionment) */
+        foreach (seats; 0 .. maxSeats) {
+            Party winner = parties[0];
+            foreach (party; parties[1 .. $]) {
+                if (partyVotes[winner] / (winner.seats == 0 ? first_divisor : 2 * winner.seats + 1) < partyVotes[party] / (party.seats == 0 ? first_divisor : 2 * party.seats + 1))
+                    winner = party;
+            }
+            ++winner.seats;
+            //writefln("Assigning seat to %s", winner.name);
         }
-        ++winner.seats;
-        writefln("Assigning seat to %s", winner.name);
+        Party loser;
+        foreach (party; parties) {
+            if (party.seats >= seat_threshold)
+                continue;
+            if (loser is null || party.seats < loser.seats || (party.seats == loser.seats && partyVotes[party] < partyVotes[loser]))
+                loser = party;
+        }
+        if (loser !is null) {
+            loser.excluded = true;
+            // remove from "parties" list too
+            Party[] tmp;
+            foreach (party; parties) {
+                if (!party.excluded)
+                    tmp ~= party;
+            }
+            parties = tmp;
+            writefln("Party %s received too few votes (%s) and is ineligible to win any seats", loser.name, partyVotes[loser]);
+        } else {
+            // all remaining parties received enough votes, upper apportionment is done, break loop
+            break;
+        }
     }
-    /* TODO: end preferential rerun */
 
     /* lower apportionment */
     /* assign initial seats in districts, which likely will be wrong, but corrected in later stages */
@@ -611,7 +634,8 @@ void main() {
     ulong[Party] partySeats;
     ulong[District] districtSeats;
     bool modifyPartyMultipliers = true;
-    while (true) {
+    ulong iterationCounter = 0;
+    while (++iterationCounter && iterationCounter < 1000) {
         foreach (party; parties)
             partySeats[party] = 0;
         foreach (district; districts)
@@ -669,8 +693,10 @@ void main() {
                     }
                 }
                 sort!("a < b")(multipliers);
+                /*
                 foreach (i, m; multipliers)
                     writefln("Multiplier for %2s seats: %s", i + 1, m);
+                */
                 real minMultiplier = multipliers[party.seats - 1];
                 real maxMultiplier = multipliers[party.seats];
 
@@ -711,7 +737,7 @@ void main() {
                         long tmpSeats = 0;
                         foreach (tmpParty; parties)
                             tmpSeats += cast(long) (districtPartySeats[district][tmpParty] * multiplier + 0.5);
-                        writefln("%s: %3s | %s (%s: %s)", border, tmpSeats, multiplier, party.name, districtPartySeats[district][party]);
+                        //writefln("%s: %3s | %s (%s: %s)", border, tmpSeats, multiplier, party.name, districtPartySeats[district][party]);
                         if (tmpSeats > district.seats + 1)
                             break;
                         multipliers ~= multiplier;
@@ -719,8 +745,10 @@ void main() {
                     }
                 }
                 sort!("a < b")(multipliers);
+                /*
                 foreach (i, m; multipliers)
                     writefln("Multiplier for %2s seats: %s", i + 1, m);
+                */
                 real minMultiplier = multipliers[district.seats - 1];
                 real maxMultiplier = multipliers[district.seats];
 
@@ -771,4 +799,5 @@ void main() {
         writef("| %3s/%3s ", totalSeatCount, maxSeats);
         writeln();
     }
+    writefln("It took %s iterations before a result was found", --iterationCounter);
 }
