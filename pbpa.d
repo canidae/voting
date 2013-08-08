@@ -31,7 +31,7 @@ struct Vote {
 void main() {
 
     /* read file with election results */
-    auto file = File("election_2009.txt");
+    auto file = File("election_2005.txt");
     scope(exit)
         file.close();
     District readDistrict;
@@ -76,7 +76,7 @@ void main() {
 
     immutable first_divisor = 1.0; // first divisor in modified sainte-lague, arguably not necessary.
     immutable seat_threshold = 1; // the minimum amount of seats a party must win
-    immutable percentage_threshold = 0.015; // percentage of votes needed to win seats (value from 0.0 to 1.0)
+    immutable percentage_threshold = 0.0; //0.015; // percentage of votes needed to win seats (value from 0.0 to 1.0)
 
     /* tally district votes and reset counters */
     ulong[Party][District] districtPartyVotes;
