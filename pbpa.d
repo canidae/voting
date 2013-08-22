@@ -3,6 +3,8 @@ import std.conv: to;
 import std.stdio;
 import std.string: stripLeft, stripRight, indexOf;
 
+import rational;
+
 class Party {
     string name;
     ulong seats; // seats assigned in upper apportionment
@@ -29,9 +31,14 @@ struct Vote {
 }
 
 void main() {
+    /* constants */
+    immutable first_divisor = 1.0; // first divisor in modified sainte-lague, arguably not necessary.
+    immutable seat_threshold = 1; // the minimum amount of seats a party must win
+    auto percentage_threshold = Rational(15, 1000); // percentage of votes needed to win seats (value from 0.0 to 1.0)
+    auto border_delta_percentage = Rational(1, 100); // how near the min/max multiplier we want to go. value must be greater than 0 and less than 1
 
     /* read file with election results */
-    auto file = File("election_2005.txt");
+    auto file = File("election_2009.txt");
     scope(exit)
         file.close();
     District readDistrict;
@@ -74,14 +81,11 @@ void main() {
         }
     }
 
-    immutable first_divisor = 1.0; // first divisor in modified sainte-lague, arguably not necessary.
-    immutable seat_threshold = 1; // the minimum amount of seats a party must win
-    immutable percentage_threshold = 0.0; //0.015; // percentage of votes needed to win seats (value from 0.0 to 1.0)
-
     /* tally district votes and reset counters */
     ulong[Party][District] districtPartyVotes;
-    real[Party][District] districtPartySeats;
+    ulong[Party][District] districtPartySeats;
     ulong[Party] partyVotes;
+    ulong[District] districtVotes;
     ulong voteCount;
     while (true) {
         voteCount = 0;
@@ -90,15 +94,16 @@ void main() {
         foreach (district; districts) {
             foreach (party; parties) {
                 districtPartyVotes[district][party] = 0;
-                districtPartySeats[district][party] = 0;
                 party.seats = 0;
             }
+            districtVotes[district] = 0;
             foreach (vote; district.votes) {
                 foreach (party; vote.parties) {
                     if (party.excluded)
                         continue; // party did not receive enough votes and has been removed
                     ++districtPartyVotes[district][party];
                     ++partyVotes[party];
+                    ++districtVotes[district];
                     ++voteCount;
                     break;
                 }
@@ -120,7 +125,7 @@ void main() {
             if (loser is null || partyVotes[party] < partyVotes[loser])
                 loser = party;
         }
-        if (loser !is null && (loser.seats < seat_threshold || cast(real) partyVotes[loser] / maxVotes < percentage_threshold)) {
+        if (loser !is null && (loser.seats < seat_threshold || Rational(partyVotes[loser], maxVotes) < percentage_threshold)) {
             loser.excluded = true;
             // remove from "parties" list too
             Party[] tmp;
@@ -129,7 +134,7 @@ void main() {
                     tmp ~= party;
             }
             parties = tmp;
-            writefln("Party %s didn't reach all the election thresholds (%s/%s seats, %s/%s vote percentage) and is excluded from the election", loser.name, loser.seats, seat_threshold, cast(real) partyVotes[loser] * 100 / maxVotes, percentage_threshold * 100);
+            writefln("Party %s didn't reach all the election thresholds (%s of %s seats, %s of %s vote percentage) and is excluded from the election", loser.name, loser.seats, seat_threshold, cast(real) partyVotes[loser] * 100 / maxVotes, percentage_threshold * 100);
         } else {
             // all remaining parties received enough votes, upper apportionment is done, break loop
             break;
@@ -137,19 +142,19 @@ void main() {
     }
 
     /* lower apportionment */
+    /* set initial multipliers */
+    Rational[Party] partyMultipliers;
+    Rational[District] districtMultipliers;
+    foreach (party; parties)
+        partyMultipliers[party] = Rational(1);
+    foreach (district; districts)
+        districtMultipliers[district] = Rational(district.seats, districtVotes[district]);
+
     /* assign initial seats in districts, which likely will be wrong, but corrected in later stages */
     foreach (district; districts) {
         foreach (party; parties)
-            districtPartySeats[district][party] = cast(real) (maxSeats * districtPartyVotes[district][party]) / cast(real) (voteCount);
+            districtPartySeats[district][party] = cast(long) (districtPartyVotes[district][party] * partyMultipliers[party] * districtMultipliers[district] + Rational(1, 2));
     }
-
-    /* set initial multipliers */
-    real[Party] partyMultipliers;
-    real[District] districtMultipliers;
-    foreach (party; parties)
-        partyMultipliers[party] = 1.0;
-    foreach (district; districts)
-        districtMultipliers[district] = 1.0;
 
     /* correction stages */
     /* sum up party seats for parties & districts */
@@ -157,16 +162,15 @@ void main() {
     ulong[District] districtSeats;
     bool modifyPartyMultipliers = true;
     ulong iterationCounter = 0;
-    while (++iterationCounter && iterationCounter < 1000) {
+    while (++iterationCounter && iterationCounter < 100) {
         foreach (party; parties)
             partySeats[party] = 0;
         foreach (district; districts)
             districtSeats[district] = 0;
         foreach (party; parties) {
             foreach (district; districts) {
-                ulong tmpSeats = cast(int) (districtPartySeats[district][party] + 0.5);
-                districtSeats[district] += tmpSeats;
-                partySeats[party] += tmpSeats;
+                districtSeats[district] += districtPartySeats[district][party];
+                partySeats[party] += districtPartySeats[district][party];
             }
         }
         /* are we finished? */
@@ -190,28 +194,28 @@ void main() {
         if (modifyPartyMultipliers) {
             /* modify party multipliers */
             writeln();
-            writeln("Modifying multipliers for parties:");
+            writefln("Modifying multipliers for parties (round %s):", iterationCounter);
             foreach (party; parties) {
                 if (party.seats == partySeats[party])
                     continue; // this party got the right amount of seats, no need to modify multiplier
 
                 // find minMultiplier & maxMultiplier
-                real multiplier;
-                real multipliers[];
+                Rational multiplier;
+                Rational multipliers[];
                 foreach (district; districts) {
                     if (districtPartyVotes[district][party] == 0)
                         continue; // no votes in district
-                    real border = 0.5;
+                    auto border = Rational(1, 2);
                     while (true) {
-                        multiplier = border / districtPartySeats[district][party];
+                        multiplier = border / (districtPartyVotes[district][party] * partyMultipliers[party] * districtMultipliers[district]);
                         long tmpSeats = 0;
                         foreach (tmpDistrict; districts)
-                            tmpSeats += cast(long) (districtPartySeats[tmpDistrict][party] * multiplier + 0.5);
+                            tmpSeats += cast(long) (districtPartyVotes[tmpDistrict][party] * partyMultipliers[party] * districtMultipliers[tmpDistrict] * multiplier + Rational(1, 2));
                         //writefln("%s: %3s | %s (%s: %s)", border, tmpSeats, multiplier, district.name, districtPartySeats[district][party]);
                         if (tmpSeats > party.seats + 1)
                             break;
                         multipliers ~= multiplier;
-                        border += 1;
+                        ++border;
                     }
                 }
                 sort!("a < b")(multipliers);
@@ -219,8 +223,8 @@ void main() {
                 foreach (i, m; multipliers)
                     writefln("Multiplier for %2s seats: %s", i + 1, m);
                 */
-                real minMultiplier = multipliers[party.seats - 1];
-                real maxMultiplier = multipliers[party.seats];
+                auto minMultiplier = multipliers[party.seats - 1];
+                auto maxMultiplier = multipliers[party.seats];
 
                 /* this source: http://www.math.uni-augsburg.de/stochastik/pukelsheim/2008f.pdf
                    says that when increasing, you should use the highest possible multiplier.
@@ -234,36 +238,44 @@ void main() {
                    for now, we're using average */
 
                 //multiplier = minMultiplier < 1 ? minMultiplier : maxMultiplier - 0.0001; // TODO: if we're using highest possible multiplier we need to reduce it with smallest possible value (which is difficult)
-                multiplier = (minMultiplier + maxMultiplier) / 2;
-                writefln("Multiplier for %-25s: %s (%s/%s)", party.name, multiplier, minMultiplier, maxMultiplier);
+                long denominator = cast(long) (1 / (maxMultiplier - minMultiplier)).ceil();
+                long numerator = cast(long) (maxMultiplier * denominator);
+                multiplier = Rational(numerator, denominator);
+                if (multiplier < minMultiplier || multiplier >= maxMultiplier)
+                    writefln("ERROR!!! multiplier is outside of range!"); // TODO: this may equal maxMultiplier, we must prevent that
+                //Rational multiplierDelta = (maxMultiplier - minMultiplier) * border_delta_percentage;
+                //multiplier = minMultiplier < 1 ? minMultiplier + multiplierDelta : maxMultiplier - multiplierDelta;
+                //multiplier = (minMultiplier + maxMultiplier) / 2;
+                writefln("Multiplier for %-7s: %s (%s/%s)", party.name, multiplier, minMultiplier, maxMultiplier);
+                partyMultipliers[party] *= multiplier;
                 foreach (district; districts)
-                    districtPartySeats[district][party] *= multiplier;
+                    districtPartySeats[district][party] = cast(long) (districtPartyVotes[district][party] * partyMultipliers[party] * districtMultipliers[district] + Rational(1, 2));
             }
         } else {
             /* modify district multipliers */
             writeln();
-            writeln("Modifying multipliers for districts:");
+            writefln("Modifying multipliers for districts (round %s):", iterationCounter);
             foreach (district; districts) {
                 if (district.seats == districtSeats[district])
                     continue; // this district got the right amount of seats, no need to modify multiplier
 
                 // find minMultiplier & maxMultiplier
-                real multiplier;
-                real multipliers[];
+                Rational multiplier;
+                Rational multipliers[];
                 foreach (party; parties) {
                     if (districtPartyVotes[district][party] == 0)
                         continue; // no votes for party
-                    real border = 0.5;
+                    auto border = Rational(1, 2);
                     while (true) {
-                        multiplier = border / districtPartySeats[district][party];
+                        multiplier = border / (districtPartyVotes[district][party] * partyMultipliers[party] * districtMultipliers[district]);
                         long tmpSeats = 0;
                         foreach (tmpParty; parties)
-                            tmpSeats += cast(long) (districtPartySeats[district][tmpParty] * multiplier + 0.5);
+                            tmpSeats += cast(long) (districtPartyVotes[district][tmpParty] * partyMultipliers[tmpParty] * districtMultipliers[district] * multiplier + Rational(1, 2));
                         //writefln("%s: %3s | %s (%s: %s)", border, tmpSeats, multiplier, party.name, districtPartySeats[district][party]);
                         if (tmpSeats > district.seats + 1)
                             break;
                         multipliers ~= multiplier;
-                        border += 1;
+                        ++border;
                     }
                 }
                 sort!("a < b")(multipliers);
@@ -271,14 +283,22 @@ void main() {
                 foreach (i, m; multipliers)
                     writefln("Multiplier for %2s seats: %s", i + 1, m);
                 */
-                real minMultiplier = multipliers[district.seats - 1];
-                real maxMultiplier = multipliers[district.seats];
+                auto minMultiplier = multipliers[district.seats - 1];
+                auto maxMultiplier = multipliers[district.seats];
 
                 //multiplier = minMultiplier < 1 ? minMultiplier : maxMultiplier - 0.0001; // TODO: if we're using highest possible multiplier we need to reduce it with smallest possible value (which is difficult)
-                multiplier = (minMultiplier + maxMultiplier) / 2;
+                long denominator = cast(long) (1 / (maxMultiplier - minMultiplier)).ceil();
+                long numerator = cast(long) (maxMultiplier * denominator);
+                multiplier = Rational(numerator, denominator);
+                if (multiplier < minMultiplier || multiplier >= maxMultiplier)
+                    writefln("ERROR!!! multiplier is outside of range!"); // TODO: this may equal maxMultiplier, we must prevent that
+                //Rational multiplierDelta = (maxMultiplier - minMultiplier) * border_delta_percentage;
+                //multiplier = minMultiplier < 1 ? minMultiplier + multiplierDelta : maxMultiplier - multiplierDelta;
+                //multiplier = (minMultiplier + maxMultiplier) / 2;
                 writefln("Multiplier for %-16s: %s (%s/%s)", district.name, multiplier, minMultiplier, maxMultiplier);
+                districtMultipliers[district] *= multiplier;
                 foreach (party; parties)
-                    districtPartySeats[district][party] *= multiplier;
+                    districtPartySeats[district][party] = cast(long) (districtPartyVotes[district][party] * partyMultipliers[party] * districtMultipliers[district] + Rational(1, 2));
             }
         }
         modifyPartyMultipliers = !modifyPartyMultipliers;
@@ -299,7 +319,7 @@ void main() {
             writef(" %16.16s ", district.name);
             ulong districtSeatCount;
             foreach (party; parties) {
-                ulong tmpSeats = cast(int) (districtPartySeats[district][party] + 0.5);
+                ulong tmpSeats = cast(long) (districtPartySeats[district][party] + Rational(1, 2));
                 writef("| %7s ", tmpSeats);
                 //writef("| %7.06f", districtPartySeats[district][party]);
                 districtSeatCount += tmpSeats;
@@ -317,11 +337,18 @@ void main() {
         foreach (party; parties) {
             ulong partySeatCount;
             foreach (district; districts)
-                partySeatCount += cast(int) (districtPartySeats[district][party] + 0.5);
+                partySeatCount += cast(long) (districtPartySeats[district][party] + Rational(1, 2));
             writef("| %3s/%3s ", partySeatCount, party.seats);
         }
         writef("| %3s/%3s ", totalSeatCount, maxSeats);
         writeln();
     }
     writefln("It took %s iterations before a result was found", --iterationCounter);
+    writefln("Party multipliers:");
+    foreach (party; parties)
+        writef("%5s: %s, ", party.name, partyMultipliers[party]);
+    writeln();
+    writefln("District multipliers:");
+    foreach (district; districts)
+        writef("%5s: %s, ", district.name, districtMultipliers[district]);
 }
