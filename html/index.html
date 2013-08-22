@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <head>
+    <title>Dobbeltproporsjonal fordeling av mandater i norsk stortingsvalg</title>
+    <script src="BigInteger.js"></script>
+    <script src="BigRational.js"></script>
+    <script>
+      var districts = ["Østfold", "Akershus", "Oslo", "Hedmark", "Oppland", "Buskerud", "Vestfold", "Telemark", "Aust-Agder", "Vest-Agder", "Rogaland", "Hordaland", "Sogn og Fjordane", "Møre og Romsdal", "Sør-Trøndelag", "Nord-Trøndelag", "Nordland", "Troms", "Finnmark"];
+      var historicYears = [2005, 2009];
+      var historicParties = [
+        ["Arbeiderpartiet", "Sosialistisk Venstreparti", "Rød Valgallianse", "Senterpartiet", "Kristelig Folkeparti", "Venstre", "Høyre", "Fremskrittspartiet", "Pensjonistpartiet", "Miljøpartiet de Grønne", "Kystpartiet", "Andre"],
+        ["Arbeiderpartiet", "Sosialistisk Venstreparti", "Rødt", "Senterpartiet", "Kristelig Folkeparti", "Venstre", "Høyre", "Fremskrittspartiet", "Pensjonistpartiet", "Miljøpartiet de Grønne", "Kystpartiet", "Andre"]
+      ];
+      var historicDistrictSeats = [
+        [9, 16, 17, 8, 7, 9, 7, 6, 4, 6, 13, 15, 5, 9, 10, 6, 10, 7, 5],
+        [9, 16, 17, 8, 7, 9, 7, 6, 4, 6, 13, 15, 5, 9, 10, 6, 10, 7, 5]
+      ];
+      var historicVotes = [
+        [
+          [52984,10721,962,7236,10205,5943,17697,39816,1350,180,394,755],
+          [87702,22555,2269,11328,11212,21834,59181,67411,2102,480,559,684],
+          [97246,41434,9277,3270,11168,28639,61130,53280,1346,668,551,825],
+          [50484,9650,560,11304,3519,3965,8845,18717,2492,0,233,236],
+          [47202,8430,587,13583,4285,4662,8576,18208,576,152,269,264],
+          [50688,10201,909,8926,6116,7185,21106,33697,481,169,340,213],
+          [39085,10808,801,4649,7775,6513,19790,37886,570,312,349,709],
+          [37356,8601,758,6490,7414,3494,8886,21022,322,0,276,372],
+          [16987,4560,269,3093,7452,3158,7436,14641,489,0,174,352],
+          [21590,5884,317,3812,17057,4891,13266,21609,452,214,259,868],
+          [53736,13759,1070,13764,26613,15370,33402,56995,858,287,1213,1387],
+          [72986,19615,9000,13169,22982,18407,42902,57966,985,388,1439,1691],
+          [17774,5511,359,12668,5404,3503,5062,9316,0,0,495,227],
+          [36649,8321,573,11795,15465,10623,17962,36813,0,111,1303,593],
+          [59837,16764,1763,13228,7610,6983,19518,27786,1227,360,699,594],
+          [29359,8399,363,11966,3439,3165,5094,10916,0,73,417,147],
+          [48097,14881,1234,12063,5917,4318,11108,30017,306,134,4155,388],
+          [27757,8109,981,6456,3757,2634,7548,19236,0,124,7218,268],
+          [14937,4768,303,2263,1495,826,3439,6564,0,0,1605,847]
+        ],
+        [
+          [58613,6501,1041,7250,8589,3739,22041,38853,1320,374,129,538],
+          [101241,17040,2566,9435,9308,14688,69505,73300,1595,1181,153,574],
+          [113103,33205,12917,3126,8786,20784,69999,56953,1146,1828,145,1124],
+          [50855,7078,630,11096,2652,2650,10994,19326,2119,347,86,133],
+          [47728,5367,612,12912,3182,3103,11643,18272,837,351,57,222],
+          [52751,6514,884,8842,4500,4324,27588,35764,0,407,109,566],
+          [44169,8551,848,4257,6164,3944,25752,35687,522,495,140,588],
+          [39296,5020,1147,5184,6239,2374,12405,21708,348,240,60,312],
+          [19377,2588,377,2609,6663,2054,9721,15538,304,148,32,212],
+          [24450,3647,427,3296,14337,2876,16214,25296,623,322,78,812],
+          [59145,10609,908,13144,25541,10053,44289,60030,1386,571,223,998],
+          [81636,14698,6794,14768,19138,12361,54066,61147,674,1083,335,1333],
+          [17375,3418,541,14782,3984,1952,7112,9287,0,109,124,22],
+          [42542,5279,653,11879,11713,5298,22356,37967,0,196,223,562],
+          [66614,12852,2057,11803,6189,5871,22587,31885,1026,834,262,556],
+          [31466,4685,447,11259,2917,2119,6465,12641,0,125,116,165],
+          [50912,10045,1829,10736,4778,2957,14905,31562,0,343,1139,497],
+          [30942,6275,1242,7015,3042,2150,10846,21224,0,255,954,271],
+          [16834,2989,299,1613,1026,847,3970,8277,0,77,976,189]
+        ]
+      ];
+
+      var table = "<table><tr><th>Stemmetall</th>";
+      for (var p = 0; p < historicParties[0].length; ++p) {
+        table += "<th>" + historicParties[0][p] + "</th>";
+      }
+      table += "</tr>";
+      for (var d = 0; d < districts.length; d++) {
+        table += "<tr><th>" + districts[d] + "</th>";
+        for (var p = 0; p < historicVotes[0][d].length; ++p) {
+          table += "<td><input name=\"votes_" + d + "_" + p + "\" type=\"text\" size=\"6\" value=\"" + historicVotes[0][d][p] + "\" /></td>";
+        }
+        table += "</tr>";
+      }
+      table += "</table>";
+      document.write(table);
+
+      function calculate() {
+        /* TODO: replace all "historic" variables with html table values */
+        /* init district tables */
+        var districtVotes = [];
+        var districtMultipliers = [];
+        for (var d = 0; d < districts.length; ++d) {
+          districtVotes.push(0);
+          for (var p = 0; p < historicParties[0].length; ++p) {
+            districtVotes[d] += historicVotes[0][d][p];
+          }
+          districtMultipliers.push(bigRat(historicDistrictSeats[0][d], districtVotes[d]));
+        }
+        var districtSeats = historicDistrictSeats[0];
+
+        var seatCount = 0;
+        for (var ds = 0; ds < districtSeats.length; ++ds) {
+          seatCount += districtSeats[ds];
+        }
+
+        /* init party tables */
+        var partyVotes = [];
+        var partyMultipliers = [];
+        for (var p = 0; p < historicParties[0].length; ++p) {
+          partyVotes.push(0);
+          for (var d = 0; d < districts.length; ++d) {
+            partyVotes[p] += historicVotes[0][d][p];
+          }
+          partyMultipliers.push(bigRat(1));
+        }
+        /* TODO: election threshold (exclude parties that fall below) */
+        var partySeats = sainteLagueApportionment(partyVotes, seatCount);
+
+        /* assign initial seats in districts */
+        var districtPartySeats = [];
+        for (var d = 0; d < districtMultipliers.length; ++d) {
+          var tmpArray = [];
+          for (var p = 0; p < partyMultipliers.length; ++p) {
+            tmpArray.push(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round());
+          }
+          districtPartySeats.push(tmpArray);
+        }
+
+        /* correction stage */
+        var correctionRound = 0;
+        while (++correctionRound < 30) {
+          console.log("Round " + correctionRound);
+          /* check if every party and every district got the right amount of seats */
+          var tmpPartySeats = [];
+          for (var p = 0; p < partyMultipliers.length; ++p) {
+            tmpPartySeats.push(0);
+          }
+          var tmpDistrictSeats = [];
+          for (var d = 0; d < districtMultipliers.length; ++d) {
+            tmpDistrictSeats.push(0);
+          }
+          for (var p = 0; p < partyMultipliers.length; ++p) {
+            for (var d = 0; d < districtMultipliers.length; ++d) {
+              tmpPartySeats[p] += districtPartySeats[d][p];
+              tmpDistrictSeats[d] += districtPartySeats[d][p];
+            }
+          }
+          var finished = true;
+          for (var p = 0; p < partyMultipliers.length; ++p) {
+            finished = partySeats[p] == tmpPartySeats[p];
+            if (!finished) {
+              break;
+            }
+          }
+          if (finished) {
+            for (var d = 0; d < districtMultipliers.length; ++d) {
+              finished = districtSeats[d] == tmpDistrictSeats[d];
+              if (!finished) {
+                break;
+              }
+            }
+            if (finished) {
+              /* all parties and districts got the right amount of seats, we're done */
+              break;
+            }
+          }
+
+          /* some parties/districts got the wrong amount of seats assigned, we need to correct multipliers */
+          if (correctionRound % 2 == 1) {
+            /* correct multipliers for parties */
+            for (var p = 0; p < partyMultipliers.length; ++p) {
+              if (partySeats[p] == tmpPartySeats[p]) {
+                /* party got the right amount of seats, no need to correct multiplier */
+                continue;
+              }
+
+              var multiplier;
+              var multipliers = [];
+              for (var d = 0; d < districtMultipliers.length; ++d) {
+                if (historicVotes[0][d][p] == 0) {
+                  /* no votes for party in district, skip */
+                  continue;
+                }
+                var border = bigRat(1, 2);
+                while (true) {
+                  multiplier = border.divide(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]));
+                  var tmpSeats = 0;
+                  for (var d2 = 0; d2 < districtMultipliers.length; ++d2) {
+                    tmpSeats += bigRat(historicVotes[0][d2][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d2]).multiply(multiplier).round();
+                  }
+                  if (tmpSeats > partySeats[p] + 1) {
+                    break;
+                  }
+                  multipliers.push(multiplier);
+                  border = border.add(1);
+                }
+              }
+              multipliers.sort(function(a, b) {
+                  return a.subtract(b);
+              });
+              var minMultiplier = multipliers[partySeats[p] - 1];
+              var maxMultiplier = multipliers[partySeats[p]];
+              var denominator = bigRat(1).divide(maxMultiplier.subtract(minMultiplier)).ceil();
+              var multiplier = maxMultiplier.multiply(denominator).floor().divide(denominator);
+              console.log("Multiplier for " + historicParties[0][p] + ": " + multiplier + ", Min: " + minMultiplier + ", Max: " + maxMultiplier);
+              if (multiplier.lesser(minMultiplier) || multiplier.greaterOrEquals(maxMultiplier)) {
+                alert("Multiplier " + multiplier + " is outside of range " + minMultiplier + " - " + maxMultiplier);
+              }
+              partyMultipliers[p] = partyMultipliers[p].multiply(multiplier);
+              for (var d = 0; d < districtMultipliers.length; ++d) {
+                districtPartySeats[d][p] = bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round();
+              }
+            }
+          } else {
+            /* correct multipliers for districts */
+            for (var d = 0; d < districtMultipliers.length; ++d) {
+              if (districtSeats[d] == tmpDistrictSeats[d]) {
+                /* district got the right amount of seats, no need to correct multiplier */
+                continue;
+              }
+
+              var multiplier;
+              var multipliers = [];
+              for (var p = 0; p < partyMultipliers.length; ++p) {
+                if (historicVotes[0][d][p] == 0) {
+                  /* no votes in district for party, skip */
+                  continue;
+                }
+                var border = bigRat(1, 2);
+                while (true) {
+                  multiplier = border.divide(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]));
+                  var tmpSeats = 0;
+                  for (var p2 = 0; p2 < districtMultipliers.length; ++p2) {
+                    tmpSeats += bigRat(historicVotes[0][d][p2]).multiply(partyMultipliers[p2]).multiply(districtMultipliers[d]).multiply(multiplier).round();
+                  }
+                  if (tmpSeats > districtSeats[d] + 1) {
+                    break;
+                  }
+                  multipliers.push(multiplier);
+                  border = border.add(1);
+                }
+              }
+              multipliers.sort(function(a, b) {
+                  return a.subtract(b);
+              });
+              var minMultiplier = multipliers[districtSeats[d] - 1];
+              var maxMultiplier = multipliers[districtSeats[d]];
+              var denominator = bigRat(1).divide(maxMultiplier.subtract(minMultiplier)).ceil();
+              var multiplier = maxMultiplier.multiply(denominator).floor().divide(denominator);
+              console.log("Multiplier for " + districts[d] + ": " + multiplier + ", Min: " + minMultiplier + ", Max: " + maxMultiplier);
+              if (multiplier.lesser(minMultiplier) || multiplier.greaterOrEquals(maxMultiplier)) {
+                alert("Multiplier " + multiplier + " is outside of range " + minMultiplier + " - " + maxMultiplier);
+              }
+              districtMultipliers[d] = districtMultipliers[d].multiply(multiplier);
+              for (var p = 0; p < partyMultipliers.length; ++p) {
+                districtPartySeats[d][p] = bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round();
+              }
+            }
+          }
+          for (var p = 0; p < historicParties[0].length; ++p) {
+            var tmpPartySeats = 0;
+            var tmpText = "";
+            for (var d = 0; d < districts.length; ++d) {
+              tmpPartySeats += districtPartySeats[d][p];
+              tmpText += " | " + districtPartySeats[d][p];
+            }
+            console.log(historicParties[0][p] + ": " + tmpPartySeats + tmpText);
+          }
+        }
+      }
+
+      function sainteLagueApportionment(votes, seatCount) {
+        var seats = [];
+        for (var v = 0; v < votes.length; ++v) {
+          seats.push(0);
+        }
+        for (var s = 0; s < seatCount; ++s) {
+          var winner = 0;
+          for (var v = 1; v < votes.length; ++v) {
+            if (votes[winner] / (2 * seats[winner] + 1) < votes[v] / (2 * seats[v] + 1)) {
+              winner = v;
+            }
+          }
+          ++seats[winner];
+        }
+        return seats;
+      }
+    </script>
+  </head>
+
+  <body>
+    <p>Sperregrense i prosent: <input type="text" /></p>
+    <p><input type="button" value="Regn ut" onclick="calculate()" /></p>
+  </body>
+</html>

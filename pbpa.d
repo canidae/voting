@@ -38,7 +38,7 @@ void main() {
     auto border_delta_percentage = Rational(1, 100); // how near the min/max multiplier we want to go. value must be greater than 0 and less than 1
 
     /* read file with election results */
-    auto file = File("election_2009.txt");
+    auto file = File("election_2005.txt");
     scope(exit)
         file.close();
     District readDistrict;
@@ -160,9 +160,8 @@ void main() {
     /* sum up party seats for parties & districts */
     ulong[Party] partySeats;
     ulong[District] districtSeats;
-    bool modifyPartyMultipliers = true;
     ulong iterationCounter = 0;
-    while (++iterationCounter && iterationCounter < 100) {
+    while (++iterationCounter < 100) {
         foreach (party; parties)
             partySeats[party] = 0;
         foreach (district; districts)
@@ -191,7 +190,7 @@ void main() {
         }
 
         /* check if seats are correctly apportioned */
-        if (modifyPartyMultipliers) {
+        if (iterationCounter % 2 == 1) {
             /* modify party multipliers */
             writeln();
             writefln("Modifying multipliers for parties (round %s):", iterationCounter);
@@ -301,7 +300,6 @@ void main() {
                     districtPartySeats[district][party] = cast(long) (districtPartyVotes[district][party] * partyMultipliers[party] * districtMultipliers[district] + Rational(1, 2));
             }
         }
-        modifyPartyMultipliers = !modifyPartyMultipliers;
 
         /* print result */
         writeln();
@@ -351,4 +349,5 @@ void main() {
     writefln("District multipliers:");
     foreach (district; districts)
         writef("%5s: %s, ", district.name, districtMultipliers[district]);
+    writeln();
 }
