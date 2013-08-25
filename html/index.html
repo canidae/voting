@@ -3,8 +3,11 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <head>
     <title>Dobbeltproporsjonal fordeling av mandater i norsk stortingsvalg</title>
+    <!-- rational numbers is way too slow, we probably don't need the accuracy anyways
     <script src="BigInteger.js"></script>
     <script src="BigRational.js"></script>
+    -->
+    <script src="jquery-1.10.2.js"></script>
     <script>
       var districts = ["Østfold", "Akershus", "Oslo", "Hedmark", "Oppland", "Buskerud", "Vestfold", "Telemark", "Aust-Agder", "Vest-Agder", "Rogaland", "Hordaland", "Sogn og Fjordane", "Møre og Romsdal", "Sør-Trøndelag", "Nord-Trøndelag", "Nordland", "Troms", "Finnmark"];
       var historicYears = [2005, 2009];
@@ -61,15 +64,45 @@
         ]
       ];
 
-      var table = "<table><tr><th>Stemmetall</th>";
+      var table = "<table><tr><th>Parti</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
-        table += "<th>" + historicParties[0][p] + "</th>";
+        table += "<th colspan=\"3\">" + historicParties[0][p] + "</th>";
+      }
+      table += "</tr>";
+      table += "<tr><th>Andel stemmer</th>";
+      for (var p = 0; p < historicParties[0].length; ++p) {
+        table += "<td id=\"p" + p + "votes_percent\" colspan=\"3\">?.?%</td>";
+      }
+      table += "</tr>";
+      table += "<tr><th>Antall mandater</th>";
+      for (var p = 0; p < historicParties[0].length; ++p) {
+        table += "<td id=\"p" + p + "current_seats\">?</td>";
+        table += "<td id=\"p" + p + "dps_seats\">?</td>";
+        table += "<td id=\"p" + p + "diff_seats\">?</td>";
       }
       table += "</tr>";
       for (var d = 0; d < districts.length; d++) {
-        table += "<tr><th>" + districts[d] + "</th>";
+        table += "<tr><th>" + districts[d] + " (" + historicDistrictSeats[0][d] + " mandater)</th>";
         for (var p = 0; p < historicVotes[0][d].length; ++p) {
-          table += "<td><input name=\"votes_" + d + "_" + p + "\" type=\"text\" size=\"6\" value=\"" + historicVotes[0][d][p] + "\" /></td>";
+          var idPrefix = "d" + d + "p" + p;
+          table += "<td id=\"" + idPrefix + "votes\" colspan=\"2\"><input name=\"votes_" + d + "_" + p + "\" type=\"text\" size=\"4\" value=\"" + historicVotes[0][d][p] + "\" /></td>";
+          table += "<td id=\"" + idPrefix + "votes_percent\">?.?%</td>";
+        }
+        table += "</tr>";
+        table += "<tr><td>Dagens valgsystem</td>";
+        for (var p = 0; p < historicVotes[0][d].length; ++p) {
+          var idPrefix = "d" + d + "p" + p;
+          table += "<td id=\"" + idPrefix + "current_seats\">?</td>";
+          table += "<td id=\"" + idPrefix + "current_seats_percent\">?.?%</td>";
+          table += "<td id=\"" + idPrefix + "current_disproportionality\">?.?%</td>";
+        }
+        table += "</tr>";
+        table += "<tr><td>Dobbeltproporsjonal</td>";
+        for (var p = 0; p < historicVotes[0][d].length; ++p) {
+          var idPrefix = "d" + d + "p" + p;
+          table += "<td id=\"" + idPrefix + "dpf_seats\">?</td>";
+          table += "<td id=\"" + idPrefix + "dpf_seats_percent\">?.?%</td>";
+          table += "<td id=\"" + idPrefix + "dpf_disproportionality\">?.?%</td>";
         }
         table += "</tr>";
       }
@@ -83,10 +116,11 @@
         var districtMultipliers = [];
         for (var d = 0; d < districts.length; ++d) {
           districtVotes.push(0);
-          for (var p = 0; p < historicParties[0].length; ++p) {
+          for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
             districtVotes[d] += historicVotes[0][d][p];
           }
-          districtMultipliers.push(bigRat(historicDistrictSeats[0][d], districtVotes[d]));
+          //districtMultipliers.push(bigRat(historicDistrictSeats[0][d], districtVotes[d]));
+          districtMultipliers.push(historicDistrictSeats[0][d] / districtVotes[d]);
         }
         var districtSeats = historicDistrictSeats[0];
 
@@ -98,12 +132,13 @@
         /* init party tables */
         var partyVotes = [];
         var partyMultipliers = [];
-        for (var p = 0; p < historicParties[0].length; ++p) {
+        for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
           partyVotes.push(0);
           for (var d = 0; d < districts.length; ++d) {
             partyVotes[p] += historicVotes[0][d][p];
           }
-          partyMultipliers.push(bigRat(1));
+          //partyMultipliers.push(bigRat(1));
+          partyMultipliers.push(1);
         }
         /* TODO: election threshold (exclude parties that fall below) */
         var partySeats = sainteLagueApportionment(partyVotes, seatCount);
@@ -113,14 +148,15 @@
         for (var d = 0; d < districtMultipliers.length; ++d) {
           var tmpArray = [];
           for (var p = 0; p < partyMultipliers.length; ++p) {
-            tmpArray.push(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round());
+            //tmpArray.push(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round());
+            tmpArray.push(Math.round(historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]));
           }
           districtPartySeats.push(tmpArray);
         }
 
         /* correction stage */
         var correctionRound = 0;
-        while (++correctionRound < 30) {
+        while (++correctionRound < 100) {
           console.log("Round " + correctionRound);
           /* check if every party and every district got the right amount of seats */
           var tmpPartySeats = [];
@@ -173,34 +209,44 @@
                   /* no votes for party in district, skip */
                   continue;
                 }
-                var border = bigRat(1, 2);
+                //var border = bigRat(1, 2);
+                var border = 0.5;
                 while (true) {
-                  multiplier = border.divide(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]));
+                  //multiplier = border.divide(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]));
+                  multiplier = border / (historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
                   var tmpSeats = 0;
                   for (var d2 = 0; d2 < districtMultipliers.length; ++d2) {
-                    tmpSeats += bigRat(historicVotes[0][d2][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d2]).multiply(multiplier).round();
+                    //tmpSeats += bigRat(historicVotes[0][d2][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d2]).multiply(multiplier).round();
+                    tmpSeats += Math.round(historicVotes[0][d2][p] * partyMultipliers[p] * districtMultipliers[d2] * multiplier);
                   }
                   if (tmpSeats > partySeats[p] + 1) {
                     break;
                   }
                   multipliers.push(multiplier);
-                  border = border.add(1);
+                  //border = border.add(1);
+                  border += 1;
                 }
               }
               multipliers.sort(function(a, b) {
-                  return a.subtract(b);
+                  //return a.subtract(b);
+                  return a - b;
               });
               var minMultiplier = multipliers[partySeats[p] - 1];
               var maxMultiplier = multipliers[partySeats[p]];
-              var denominator = bigRat(1).divide(maxMultiplier.subtract(minMultiplier)).ceil();
-              var multiplier = maxMultiplier.multiply(denominator).floor().divide(denominator);
+              //var denominator = bigRat(1).divide(maxMultiplier.subtract(minMultiplier)).ceil();
+              //var multiplier = maxMultiplier.multiply(denominator).floor().divide(denominator);
+              var delta = (maxMultiplier - minMultiplier) * 0.1;
+              var multiplier = minMultiplier > 1 ? maxMultiplier - delta : minMultiplier + delta;
               console.log("Multiplier for " + historicParties[0][p] + ": " + multiplier + ", Min: " + minMultiplier + ", Max: " + maxMultiplier);
-              if (multiplier.lesser(minMultiplier) || multiplier.greaterOrEquals(maxMultiplier)) {
+              //if (multiplier.lesser(minMultiplier) || multiplier.greaterOrEquals(maxMultiplier)) {
+              if (multiplier < minMultiplier || multiplier >= maxMultiplier) {
                 alert("Multiplier " + multiplier + " is outside of range " + minMultiplier + " - " + maxMultiplier);
               }
-              partyMultipliers[p] = partyMultipliers[p].multiply(multiplier);
+              //partyMultipliers[p] = partyMultipliers[p].multiply(multiplier);
+              partyMultipliers[p] = partyMultipliers[p] * multiplier;
               for (var d = 0; d < districtMultipliers.length; ++d) {
-                districtPartySeats[d][p] = bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round();
+                //districtPartySeats[d][p] = bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round();
+                districtPartySeats[d][p] = Math.round(historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
               }
             }
           } else {
@@ -218,45 +264,56 @@
                   /* no votes in district for party, skip */
                   continue;
                 }
-                var border = bigRat(1, 2);
+                //var border = bigRat(1, 2);
+                var border = 0.5;
                 while (true) {
-                  multiplier = border.divide(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]));
+                  //multiplier = border.divide(bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]));
+                  multiplier = border / (historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
                   var tmpSeats = 0;
-                  for (var p2 = 0; p2 < districtMultipliers.length; ++p2) {
-                    tmpSeats += bigRat(historicVotes[0][d][p2]).multiply(partyMultipliers[p2]).multiply(districtMultipliers[d]).multiply(multiplier).round();
+                  for (var p2 = 0; p2 < partyMultipliers.length; ++p2) {
+                    //tmpSeats += bigRat(historicVotes[0][d][p2]).multiply(partyMultipliers[p2]).multiply(districtMultipliers[d]).multiply(multiplier).round();
+                    tmpSeats += Math.round(historicVotes[0][d][p2] * partyMultipliers[p2] * districtMultipliers[d] * multiplier);
                   }
                   if (tmpSeats > districtSeats[d] + 1) {
                     break;
                   }
                   multipliers.push(multiplier);
-                  border = border.add(1);
+                  //border = border.add(1);
+                  border += 1;
                 }
               }
               multipliers.sort(function(a, b) {
-                  return a.subtract(b);
+                  //return a.subtract(b);
+                  return a - b;
               });
               var minMultiplier = multipliers[districtSeats[d] - 1];
               var maxMultiplier = multipliers[districtSeats[d]];
-              var denominator = bigRat(1).divide(maxMultiplier.subtract(minMultiplier)).ceil();
-              var multiplier = maxMultiplier.multiply(denominator).floor().divide(denominator);
+              //var denominator = bigRat(1).divide(maxMultiplier.subtract(minMultiplier)).ceil();
+              //var multiplier = maxMultiplier.multiply(denominator).floor().divide(denominator);
+              var delta = (maxMultiplier - minMultiplier) * 0.1;
+              var multiplier = minMultiplier > 1 ? maxMultiplier - delta : minMultiplier + delta;
               console.log("Multiplier for " + districts[d] + ": " + multiplier + ", Min: " + minMultiplier + ", Max: " + maxMultiplier);
-              if (multiplier.lesser(minMultiplier) || multiplier.greaterOrEquals(maxMultiplier)) {
+              //if (multiplier.lesser(minMultiplier) || multiplier.greaterOrEquals(maxMultiplier)) {
+              if (multiplier < minMultiplier || multiplier >= maxMultiplier) {
                 alert("Multiplier " + multiplier + " is outside of range " + minMultiplier + " - " + maxMultiplier);
               }
-              districtMultipliers[d] = districtMultipliers[d].multiply(multiplier);
+              //districtMultipliers[d] = districtMultipliers[d].multiply(multiplier);
+              districtMultipliers[d] = districtMultipliers[d] * multiplier;
               for (var p = 0; p < partyMultipliers.length; ++p) {
-                districtPartySeats[d][p] = bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round();
+                //districtPartySeats[d][p] = bigRat(historicVotes[0][d][p]).multiply(partyMultipliers[p]).multiply(districtMultipliers[d]).round();
+                districtPartySeats[d][p] = Math.round(historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
               }
             }
           }
           for (var p = 0; p < historicParties[0].length; ++p) {
-            var tmpPartySeats = 0;
-            var tmpText = "";
             for (var d = 0; d < districts.length; ++d) {
-              tmpPartySeats += districtPartySeats[d][p];
-              tmpText += " | " + districtPartySeats[d][p];
+              var tmpSeats = districtPartySeats[d][p] ? districtPartySeats[d][p] : 0; // last "party" will have "undefined" districtPartySeats, so we set it to 0 instead
+              var idPrefix = "#d" + d + "p" + p;
+              $(idPrefix + "votes_percent").html(Math.round(historicVotes[0][d][p] * 1000 / districtVotes[d]) / 10 + "%");
+              $(idPrefix + "dpf_seats").html(tmpSeats);
+              $(idPrefix + "dpf_seats_percent").html(Math.round(tmpSeats * 1000 / historicDistrictSeats[0][d]) / 10 + "%");
+              $(idPrefix + "dpf_disproportionality").html(Math.round(tmpSeats * 1000 / historicDistrictSeats[0][d] - historicVotes[0][d][p] * 1000 / districtVotes[d]) / 10 + "%");
             }
-            console.log(historicParties[0][p] + ": " + tmpPartySeats + tmpText);
           }
         }
       }
@@ -281,7 +338,6 @@
   </head>
 
   <body>
-    <p>Sperregrense i prosent: <input type="text" /></p>
     <p><input type="button" value="Regn ut" onclick="calculate()" /></p>
   </body>
 </html>
