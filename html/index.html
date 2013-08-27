@@ -6,37 +6,16 @@
     <script src="jquery-1.10.2.js"></script>
     <script>
       var districts = ["Østfold", "Akershus", "Oslo", "Hedmark", "Oppland", "Buskerud", "Vestfold", "Telemark", "Aust-Agder", "Vest-Agder", "Rogaland", "Hordaland", "Sogn og Fjordane", "Møre og Romsdal", "Sør-Trøndelag", "Nord-Trøndelag", "Nordland", "Troms", "Finnmark"];
-      var historicYears = [2005, 2009];
+      var historicYears = [2009, 2005];
       var historicParties = [
-        ["Arbeiderpartiet", "Sosialistisk Venstreparti", "Rød Valgallianse", "Senterpartiet", "Kristelig Folkeparti", "Venstre", "Høyre", "Fremskrittspartiet", "Pensjonistpartiet", "Miljøpartiet de Grønne", "Kystpartiet", "Andre"],
-        ["Arbeiderpartiet", "Sosialistisk Venstreparti", "Rødt", "Senterpartiet", "Kristelig Folkeparti", "Venstre", "Høyre", "Fremskrittspartiet", "Pensjonistpartiet", "Miljøpartiet de Grønne", "Kystpartiet", "Andre"]
+        ["Arbeiderpartiet", "Sosialistisk Venstreparti", "Rødt", "Senterpartiet", "Kristelig Folkeparti", "Venstre", "Høyre", "Fremskrittspartiet", "Pensjonistpartiet", "Miljøpartiet de Grønne", "Kystpartiet", "Andre"],
+        ["Arbeiderpartiet", "Sosialistisk Venstreparti", "Rød Valgallianse", "Senterpartiet", "Kristelig Folkeparti", "Venstre", "Høyre", "Fremskrittspartiet", "Pensjonistpartiet", "Miljøpartiet de Grønne", "Kystpartiet", "Andre"]
       ];
       var historicDistrictSeats = [
         [9, 16, 17, 8, 7, 9, 7, 6, 4, 6, 13, 15, 5, 9, 10, 6, 10, 7, 5],
         [9, 16, 17, 8, 7, 9, 7, 6, 4, 6, 13, 15, 5, 9, 10, 6, 10, 7, 5]
       ];
       var historicVotes = [
-        [
-          [52984,10721,962,7236,10205,5943,17697,39816,1350,180,394,755],
-          [87702,22555,2269,11328,11212,21834,59181,67411,2102,480,559,684],
-          [97246,41434,9277,3270,11168,28639,61130,53280,1346,668,551,825],
-          [50484,9650,560,11304,3519,3965,8845,18717,2492,0,233,236],
-          [47202,8430,587,13583,4285,4662,8576,18208,576,152,269,264],
-          [50688,10201,909,8926,6116,7185,21106,33697,481,169,340,213],
-          [39085,10808,801,4649,7775,6513,19790,37886,570,312,349,709],
-          [37356,8601,758,6490,7414,3494,8886,21022,322,0,276,372],
-          [16987,4560,269,3093,7452,3158,7436,14641,489,0,174,352],
-          [21590,5884,317,3812,17057,4891,13266,21609,452,214,259,868],
-          [53736,13759,1070,13764,26613,15370,33402,56995,858,287,1213,1387],
-          [72986,19615,9000,13169,22982,18407,42902,57966,985,388,1439,1691],
-          [17774,5511,359,12668,5404,3503,5062,9316,0,0,495,227],
-          [36649,8321,573,11795,15465,10623,17962,36813,0,111,1303,593],
-          [59837,16764,1763,13228,7610,6983,19518,27786,1227,360,699,594],
-          [29359,8399,363,11966,3439,3165,5094,10916,0,73,417,147],
-          [48097,14881,1234,12063,5917,4318,11108,30017,306,134,4155,388],
-          [27757,8109,981,6456,3757,2634,7548,19236,0,124,7218,268],
-          [14937,4768,303,2263,1495,826,3439,6564,0,0,1605,847]
-        ],
         [
           [58613,6501,1041,7250,8589,3739,22041,38853,1320,374,129,538],
           [101241,17040,2566,9435,9308,14688,69505,73300,1595,1181,153,574],
@@ -57,35 +36,56 @@
           [50912,10045,1829,10736,4778,2957,14905,31562,0,343,1139,497],
           [30942,6275,1242,7015,3042,2150,10846,21224,0,255,954,271],
           [16834,2989,299,1613,1026,847,3970,8277,0,77,976,189]
+        ],
+        [
+          [52984,10721,962,7236,10205,5943,17697,39816,1350,180,394,755],
+          [87702,22555,2269,11328,11212,21834,59181,67411,2102,480,559,684],
+          [97246,41434,9277,3270,11168,28639,61130,53280,1346,668,551,825],
+          [50484,9650,560,11304,3519,3965,8845,18717,2492,0,233,236],
+          [47202,8430,587,13583,4285,4662,8576,18208,576,152,269,264],
+          [50688,10201,909,8926,6116,7185,21106,33697,481,169,340,213],
+          [39085,10808,801,4649,7775,6513,19790,37886,570,312,349,709],
+          [37356,8601,758,6490,7414,3494,8886,21022,322,0,276,372],
+          [16987,4560,269,3093,7452,3158,7436,14641,489,0,174,352],
+          [21590,5884,317,3812,17057,4891,13266,21609,452,214,259,868],
+          [53736,13759,1070,13764,26613,15370,33402,56995,858,287,1213,1387],
+          [72986,19615,9000,13169,22982,18407,42902,57966,985,388,1439,1691],
+          [17774,5511,359,12668,5404,3503,5062,9316,0,0,495,227],
+          [36649,8321,573,11795,15465,10623,17962,36813,0,111,1303,593],
+          [59837,16764,1763,13228,7610,6983,19518,27786,1227,360,699,594],
+          [29359,8399,363,11966,3439,3165,5094,10916,0,73,417,147],
+          [48097,14881,1234,12063,5917,4318,11108,30017,306,134,4155,388],
+          [27757,8109,981,6456,3757,2634,7548,19236,0,124,7218,268],
+          [14937,4768,303,2263,1495,826,3439,6564,0,0,1605,847]
         ]
       ];
 
-      var table = "<table><tr><th>Parti</th>";
+      var table = "<table><tr><th colspan=\"2\">Parti</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
-        table += "<th colspan=\"3\">" + historicParties[0][p] + "</th>";
+        table += "<th class=\"party\" colspan=\"3\">" + historicParties[0][p] + "</th>";
       }
       table += "</tr>";
-      table += "<tr><th>Andel stemmer</th>";
+      table += "<tr><th colspan=\"2\">Andel stemmer</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
-        table += "<td id=\"p" + p + "votes_percent\" colspan=\"3\">?.?%</td>";
+        table += "<td id=\"p" + p + "vote_percent\" colspan=\"3\">?.?%</td>";
       }
       table += "</tr>";
-      table += "<tr><th>Antall mandater</th>";
+      table += "<tr><th colspan=\"2\">Antall mandater</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
         table += "<td id=\"p" + p + "current_seats\">?</td>";
-        table += "<td id=\"p" + p + "dps_seats\">?</td>";
+        table += "<td id=\"p" + p + "bpa_seats\">?</td>";
         table += "<td id=\"p" + p + "diff_seats\">?</td>";
       }
       table += "</tr>";
       for (var d = 0; d < districts.length; d++) {
-        table += "<tr><th>" + districts[d] + " (" + historicDistrictSeats[0][d] + " mandater)</th>";
+        table += "<tr><th class=\"district\">" + districts[d] + "</th><td class=\"seats\">" + historicDistrictSeats[0][d] + "</td>";
         for (var p = 0; p < historicVotes[0][d].length; ++p) {
           var idPrefix = "d" + d + "p" + p;
-          table += "<td id=\"" + idPrefix + "votes\" colspan=\"2\"><input name=\"votes_" + d + "_" + p + "\" type=\"text\" size=\"4\" value=\"" + historicVotes[0][d][p] + "\" /></td>";
-          table += "<td id=\"" + idPrefix + "votes_percent\">?.?%</td>";
+          table += "<td id=\"" + idPrefix + "vote\" colspan=\"2\"><input class=\"vote\" name=\"" + idPrefix + "\" type=\"text\" size=\"4\" value=\"" + historicVotes[0][d][p] + "\" /></td>";
+          table += "<td id=\"" + idPrefix + "vote_percent\">?.?%</td>";
         }
         table += "</tr>";
-        table += "<tr><td>Dagens valgsystem</td>";
+        table += "<tr><td colspan=\"2\">Dagens valgsystem</td>";
         for (var p = 0; p < historicVotes[0][d].length; ++p) {
           var idPrefix = "d" + d + "p" + p;
           table += "<td id=\"" + idPrefix + "current_seats\">?</td>";
@@ -93,48 +93,130 @@
           table += "<td id=\"" + idPrefix + "current_disproportionality\">?.?%</td>";
         }
         table += "</tr>";
-        table += "<tr><td>Dobbeltproporsjonal</td>";
+        table += "<tr><td colspan=\"2\">Dobbeltproporsjonal</td>";
         for (var p = 0; p < historicVotes[0][d].length; ++p) {
           var idPrefix = "d" + d + "p" + p;
-          table += "<td id=\"" + idPrefix + "dpf_seats\">?</td>";
-          table += "<td id=\"" + idPrefix + "dpf_seats_percent\">?.?%</td>";
-          table += "<td id=\"" + idPrefix + "dpf_disproportionality\">?.?%</td>";
+          table += "<td id=\"" + idPrefix + "bpa_seats\">?</td>";
+          table += "<td id=\"" + idPrefix + "bpa_seats_percent\">?.?%</td>";
+          table += "<td id=\"" + idPrefix + "bpa_disproportionality\">?.?%</td>";
         }
         table += "</tr>";
       }
       table += "</table>";
       document.write(table);
 
-      function calculateBiproportional() {
-        /* TODO: replace all "historic" variables with html table values */
-        /* init district tables */
+      function getDistricts() {
+        var districts = [];
+        $("th.district").each(function() {
+          districts.push($(this).text());
+        });
+        return districts;
+      }
+
+      function getDistrictSeats() {
+        var districtSeats = [];
+        $("td.seats").each(function() {
+          districtSeats.push(parseInt($(this).text()));
+        });
+        return districtSeats;
+      }
+
+      function getParties() {
+        var parties = [];
+        $("th.party").each(function() {
+          parties.push($(this).text());
+        });
+        return parties;
+      }
+
+      function getDistrictPartyVotes() {
+        var districtPartyVotes = [];
+        var lastParty = "";
+        var districtVotes;
+        $("input.vote").each(function() {
+          var p = this.name.split("p")[1];
+          if (p === "0") {
+            if (typeof districtVotes != "undefined") {
+              districtPartyVotes.push(districtVotes);
+            }
+            districtVotes = [];
+          }
+          districtVotes.push(parseInt(this.value));
+        });
+        districtPartyVotes.push(districtVotes);
+        return districtPartyVotes;
+      }
+
+      function calculate() {
+        var districts = getDistricts();
+        var districtSeats = getDistrictSeats();
+        var parties = getParties();
+        var districtPartyVotes = getDistrictPartyVotes();
+        /* TODO: methods talle some of the same stuff, can do this here and pass the values to the methods to speed things up a bit */
+        calculateCurrentSystem(districts, districtSeats, parties, districtPartyVotes);
+        calculateBiproportional(districts, districtSeats, parties, districtPartyVotes);
+
+        /* update the summary at top */
+        var partyVotes = [];
+        var voteCount = 0;
+        var currentPartySeats = [];
+        var biproportionalPartySeats = [];
+        for (var p = 0; p < parties.length; ++p) {
+          partyVotes.push(0);
+          currentPartySeats.push(0);
+          biproportionalPartySeats.push(0);
+          for (var d = 0; d < districts.length; ++d) {
+            partyVotes[p] += districtPartyVotes[d][p];
+            voteCount += districtPartyVotes[d][p];
+            var idPrefix = "#d" + d + "p" + p;
+            currentPartySeats[p] += parseInt($(idPrefix + "current_seats")[0].textContent);
+            biproportionalPartySeats[p] += parseInt($(idPrefix + "bpa_seats")[0].textContent);
+          }
+        }
+        for (var p = 0; p < parties.length; ++p) {
+          $("#p" + p + "vote_percent").html(Math.round(partyVotes[p] * 1000 / voteCount) / 10 + "%");
+          $("#p" + p + "current_seats").html(currentPartySeats[p]);
+          $("#p" + p + "bpa_seats").html(biproportionalPartySeats[p]);
+          $("#p" + p + "diff_seats").html(biproportionalPartySeats[p] - currentPartySeats[p]);
+        }
+      }
+
+      function calculateBiproportional(districts, districtSeats, parties, districtPartyVotes) {
+        /* init district multipliers (and count amount of votes) */
+        var voteCount = 0;
         var districtVotes = [];
         var districtMultipliers = [];
         for (var d = 0; d < districts.length; ++d) {
           districtVotes.push(0);
-          for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
-            districtVotes[d] += historicVotes[0][d][p];
+          for (var p = 0; p < parties.length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
+            districtVotes[d] += districtPartyVotes[d][p];
+            voteCount += districtPartyVotes[d][p];
           }
-          districtMultipliers.push(historicDistrictSeats[0][d] / districtVotes[d]);
+          districtMultipliers.push(districtSeats[d] / districtVotes[d]);
         }
-        var districtSeats = historicDistrictSeats[0];
 
         var seatCount = 0;
         for (var ds = 0; ds < districtSeats.length; ++ds) {
           seatCount += districtSeats[ds];
         }
 
-        /* init party tables */
+        /* init party multipliers */
         var partyVotes = [];
         var partyMultipliers = [];
-        for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
+        for (var p = 0; p < parties.length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
           partyVotes.push(0);
           for (var d = 0; d < districts.length; ++d) {
-            partyVotes[p] += historicVotes[0][d][p];
+            partyVotes[p] += districtPartyVotes[d][p];
           }
           partyMultipliers.push(1);
         }
-        /* TODO: election threshold (exclude parties that fall below) */
+        /* exclude parties below election threshold */
+        for (var p = 0; p < partyVotes.length; ++p) {
+          if (partyVotes[p] / voteCount < 0.015) {
+            partyVotes[p] = 0;
+            partyMultipliers[p] = 0;
+          }
+        }
         var partySeats = sainteLagueApportionment(partyVotes, seatCount);
 
         /* assign initial seats in districts */
@@ -142,7 +224,7 @@
         for (var d = 0; d < districtMultipliers.length; ++d) {
           var tmpArray = [];
           for (var p = 0; p < partyMultipliers.length; ++p) {
-            tmpArray.push(Math.round(historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]));
+            tmpArray.push(Math.round(districtPartyVotes[d][p] * partyMultipliers[p] * districtMultipliers[d]));
           }
           districtPartySeats.push(tmpArray);
         }
@@ -198,16 +280,16 @@
               var multiplier;
               var multipliers = [];
               for (var d = 0; d < districtMultipliers.length; ++d) {
-                if (historicVotes[0][d][p] == 0) {
+                if (districtPartyVotes[d][p] == 0) {
                   /* no votes for party in district, skip */
                   continue;
                 }
                 var border = 0.5;
                 while (true) {
-                  multiplier = border / (historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
+                  multiplier = border / (districtPartyVotes[d][p] * partyMultipliers[p] * districtMultipliers[d]);
                   var tmpSeats = 0;
                   for (var d2 = 0; d2 < districtMultipliers.length; ++d2) {
-                    tmpSeats += Math.round(historicVotes[0][d2][p] * partyMultipliers[p] * districtMultipliers[d2] * multiplier);
+                    tmpSeats += Math.round(districtPartyVotes[d2][p] * partyMultipliers[p] * districtMultipliers[d2] * multiplier);
                   }
                   if (tmpSeats > partySeats[p] + 1) {
                     break;
@@ -221,13 +303,13 @@
               var maxMultiplier = multipliers[partySeats[p]];
               var delta = (maxMultiplier - minMultiplier) * 0.1;
               var multiplier = minMultiplier > 1 ? maxMultiplier - delta : minMultiplier + delta;
-              console.log("Multiplier for " + historicParties[0][p] + ": " + multiplier + ", Min: " + minMultiplier + ", Max: " + maxMultiplier);
+              console.log("Multiplier for " + parties[p] + ": " + multiplier + ", Min: " + minMultiplier + ", Max: " + maxMultiplier);
               if (multiplier < minMultiplier || multiplier >= maxMultiplier) {
                 alert("Multiplier " + multiplier + " is outside of range " + minMultiplier + " - " + maxMultiplier);
               }
               partyMultipliers[p] = partyMultipliers[p] * multiplier;
               for (var d = 0; d < districtMultipliers.length; ++d) {
-                districtPartySeats[d][p] = Math.round(historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
+                districtPartySeats[d][p] = Math.round(districtPartyVotes[d][p] * partyMultipliers[p] * districtMultipliers[d]);
               }
             }
           } else {
@@ -241,16 +323,16 @@
               var multiplier;
               var multipliers = [];
               for (var p = 0; p < partyMultipliers.length; ++p) {
-                if (historicVotes[0][d][p] == 0) {
-                  /* no votes in district for party, skip */
+                if (districtPartyVotes[d][p] == 0 || partyVotes[p] == 0) {
+                  /* no votes in district for party or party didn't reach the election threshold, skip */
                   continue;
                 }
                 var border = 0.5;
                 while (true) {
-                  multiplier = border / (historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
+                  multiplier = border / (districtPartyVotes[d][p] * partyMultipliers[p] * districtMultipliers[d]);
                   var tmpSeats = 0;
                   for (var p2 = 0; p2 < partyMultipliers.length; ++p2) {
-                    tmpSeats += Math.round(historicVotes[0][d][p2] * partyMultipliers[p2] * districtMultipliers[d] * multiplier);
+                    tmpSeats += Math.round(districtPartyVotes[d][p2] * partyMultipliers[p2] * districtMultipliers[d] * multiplier);
                   }
                   if (tmpSeats > districtSeats[d] + 1) {
                     break;
@@ -270,24 +352,24 @@
               }
               districtMultipliers[d] = districtMultipliers[d] * multiplier;
               for (var p = 0; p < partyMultipliers.length; ++p) {
-                districtPartySeats[d][p] = Math.round(historicVotes[0][d][p] * partyMultipliers[p] * districtMultipliers[d]);
+                districtPartySeats[d][p] = Math.round(districtPartyVotes[d][p] * partyMultipliers[p] * districtMultipliers[d]);
               }
             }
           }
         }
-        for (var p = 0; p < historicParties[0].length; ++p) {
+        for (var p = 0; p < parties.length; ++p) {
           for (var d = 0; d < districts.length; ++d) {
             var tmpSeats = districtPartySeats[d][p] ? districtPartySeats[d][p] : 0; // last "party" will have "undefined" districtPartySeats, so we set it to 0 instead
             var idPrefix = "#d" + d + "p" + p;
-            $(idPrefix + "votes_percent").html(Math.round(historicVotes[0][d][p] * 1000 / districtVotes[d]) / 10 + "%");
-            $(idPrefix + "dpf_seats").html(tmpSeats);
-            $(idPrefix + "dpf_seats_percent").html(Math.round(tmpSeats * 1000 / historicDistrictSeats[0][d]) / 10 + "%");
-            $(idPrefix + "dpf_disproportionality").html(Math.round(tmpSeats * 1000 / historicDistrictSeats[0][d] - historicVotes[0][d][p] * 1000 / districtVotes[d]) / 10 + "%");
+            $(idPrefix + "vote_percent").html(Math.round(districtPartyVotes[d][p] * 1000 / districtVotes[d]) / 10 + "%");
+            $(idPrefix + "bpa_seats").html(tmpSeats);
+            $(idPrefix + "bpa_seats_percent").html(Math.round(tmpSeats * 1000 / districtSeats[d]) / 10 + "%");
+            $(idPrefix + "bpa_disproportionality").html(Math.round(tmpSeats * 1000 / districtSeats[d] - districtPartyVotes[d][p] * 1000 / districtVotes[d]) / 10 + "%");
           }
         }
       }
 
-      function calculateCurrentSystem() {
+      function calculateCurrentSystem(districts, districtSeats, parties, districtPartyVotes) {
         /* calculate district mandates & quotients for leveling seats */
         var voteCount = 0;
         var districtVotes = [];
@@ -295,16 +377,16 @@
         var districtPartyQuotients = [];
         var seatCount = 0;
         for (var d = 0; d < districts.length; ++d) {
-          seatCount += historicDistrictSeats[0][d];
-          districtPartySeats.push(sainteLagueApportionment(historicVotes[0][d], historicDistrictSeats[0][d] - 1, 1.4)); // "- 1" because last seat is leveling seat
+          seatCount += districtSeats[d];
+          districtPartySeats.push(sainteLagueApportionment(districtPartyVotes[d], districtSeats[d] - 1, 1.4)); // "- 1" because last seat is leveling seat
           districtVotes.push(0);
-          for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
-            districtVotes[d] += historicVotes[0][d][p];
+          for (var p = 0; p < parties.length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
+            districtVotes[d] += districtPartyVotes[d][p];
           }
           voteCount += districtVotes[d];
           var partyQuotients = [];
-          for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
-            partyQuotients.push(historicVotes[0][d][p] / (districtPartySeats[d][p] * 2 + 1) / (districtVotes[d] / (historicDistrictSeats[0][d] - 1)));
+          for (var p = 0; p < parties.length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
+            partyQuotients.push(districtPartyVotes[d][p] / (districtPartySeats[d][p] * 2 + 1) / (districtVotes[d] / (districtSeats[d] - 1)));
           }
           districtPartyQuotients.push(partyQuotients);
         }
@@ -312,11 +394,11 @@
         /* calculate seats as if there was one district */
         var partyVotes = [];
         var partySeats = [];
-        for (var p = 0; p < historicParties[0].length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
+        for (var p = 0; p < parties.length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
           partyVotes.push(0);
           partySeats.push(0);
           for (var d = 0; d < districts.length; ++d) {
-            partyVotes[p] += historicVotes[0][d][p];
+            partyVotes[p] += districtPartyVotes[d][p];
             partySeats[p] += districtPartySeats[d][p];
           }
         }
@@ -328,7 +410,6 @@
           }
         }
         /* reduce seatCount until the sum of the leveling seats is 19 */
-        var tmpSeatCount = seatCount;
         while (true) {
           partySeats = sainteLagueApportionment(partyVotes, seatCount, 1.4);
           for (var p = 0; p < partySeats.length; ++p) {
@@ -336,18 +417,16 @@
               partySeats[p] -= districtPartySeats[d][p];
             }
           }
-          seatCount = tmpSeatCount;
           var levelingSeatCount = 0;
           for (var p = 0; p < partySeats.length; ++p) {
-            if (partySeats[p] < 0) {
-              seatCount += partySeats[p];
-            } else {
+            if (partySeats[p] > 0) {
               levelingSeatCount += partySeats[p];
             }
           }
           if (levelingSeatCount == 19) {
             break;
           }
+          seatCount -= levelingSeatCount - 19;
         }
 
         /* distribute leveling seats */
@@ -365,20 +444,20 @@
               }
             }
           }
-          console.log("leveling seat goes to " + historicParties[0][winnerParty] + " in " + districts[winnerDistrict] + " with quotient " + districtPartyQuotients[winnerDistrict][winnerParty]);
+          console.log("leveling seat goes to " + parties[winnerParty] + " in " + districts[winnerDistrict] + " with quotient " + districtPartyQuotients[winnerDistrict][winnerParty]);
           districtPartyQuotients[winnerDistrict] = [];
           --partySeats[winnerParty];
           ++districtPartySeats[winnerDistrict][winnerParty];
         }
 
         /* update table */
-        for (var p = 0; p < historicParties[0].length; ++p) {
+        for (var p = 0; p < parties.length; ++p) {
           for (var d = 0; d < districts.length; ++d) {
             var tmpSeats = districtPartySeats[d][p] ? districtPartySeats[d][p] : 0; // last "party" will have "undefined" districtPartySeats, so we set it to 0 instead
             var idPrefix = "#d" + d + "p" + p;
             $(idPrefix + "current_seats").html(tmpSeats);
-            $(idPrefix + "current_seats_percent").html(Math.round(tmpSeats * 1000 / historicDistrictSeats[0][d]) / 10 + "%");
-            $(idPrefix + "current_disproportionality").html(Math.round(tmpSeats * 1000 / historicDistrictSeats[0][d] - historicVotes[0][d][p] * 1000 / districtVotes[d]) / 10 + "%");
+            $(idPrefix + "current_seats_percent").html(Math.round(tmpSeats * 1000 / districtSeats[d]) / 10 + "%");
+            $(idPrefix + "current_disproportionality").html(Math.round(tmpSeats * 1000 / districtSeats[d] - districtPartyVotes[d][p] * 1000 / districtVotes[d]) / 10 + "%");
           }
         }
       }
@@ -406,6 +485,6 @@
   </head>
 
   <body>
-    <p><input type="button" value="Regn ut" onclick="calculateBiproportional(); calculateCurrentSystem();" /></p>
+    <p><input type="button" value="Regn ut" onclick="calculate();" /></p>
   </body>
 </html>
