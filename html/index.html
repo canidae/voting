@@ -71,7 +71,8 @@
         ]
       ];
 
-      var table = "<table><tr><th colspan=\"2\">Parti</th>";
+      var table = "<p><input type=\"button\" value=\"Ekstrapoler resultat ved å bruke andel nasjonale stemmer for partier (og valgresultatet i 2009)\" onclick=\"extrapolateResult();\"/></p>";
+      table += "<table><tr><th colspan=\"2\">Parti</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
         table += "<th class=\"party\" colspan=\"2\">" + historicParties[0][p] + "</th>";
       }
@@ -79,19 +80,19 @@
       table += "<tr><th colspan=\"2\">Stemmer</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
         table += "<td class=\"party_votes\" id=\"p" + p + "votes\">?</td>";
-        table += "<td class=\"party_votes_percent\" id=\"p" + p + "votes_percent\">?.?%</td>";
+        table += "<td class=\"party_votes_percent\" id=\"p" + p + "votes_percent\"><input class=\"votes_percent\" name=\"p" + p + "votes_percent\" type=\"text\" size=\"4\" value=\"?.?%\" /></td>";
       }
       table += "</tr>";
       table += "<tr><th colspan=\"2\">Mandater</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
         table += "<td class=\"party_current_seats\" id=\"p" + p + "current_seats\">?</td>";
-        table += "<td class=\"party_current_disproportionality\" id=\"p" + p + "current_disproportionality\">?</td>";
+        table += "<td class=\"party_current_seats_percent\" id=\"p" + p + "current_seats_percent\">?</td>";
       }
       table += "</tr>";
       table += "<tr><th colspan=\"2\">Mandater (DPF)</th>";
       for (var p = 0; p < historicParties[0].length; ++p) {
         table += "<td class=\"party_bpa_seats\" id=\"p" + p + "bpa_seats\">?</td>";
-        table += "<td class=\"party_bpa_disproportionality\" id=\"p" + p + "bpa_disproportionality\">?</td>";
+        table += "<td class=\"party_bpa_seats_percent\" id=\"p" + p + "bpa_seats_percent\">?</td>";
       }
       table += "</tr>";
       for (var d = 0; d < districts.length; d++) {
@@ -106,19 +107,48 @@
         for (var p = 0; p < historicVotes[0][d].length; ++p) {
           var idPrefix = "d" + d + "p" + p;
           table += "<td class=\"district_party_current_seats\" id=\"" + idPrefix + "current_seats\">?</td>";
-          table += "<td class=\"district_party_current_disproportionality\" id=\"" + idPrefix + "current_disproportionality\">?.?%</td>";
+          table += "<td class=\"district_party_current_seats_percent\" id=\"" + idPrefix + "current_seats_percent\">?.?%</td>";
         }
         table += "</tr>";
         table += "<tr><td colspan=\"2\">Mandater (DPF)</td>";
         for (var p = 0; p < historicVotes[0][d].length; ++p) {
           var idPrefix = "d" + d + "p" + p;
           table += "<td class=\"district_party_bpa_seats\" id=\"" + idPrefix + "bpa_seats\">?</td>";
-          table += "<td class=\"district_party_bpa_disproportionality\" id=\"" + idPrefix + "bpa_disproportionality\">?.?%</td>";
+          table += "<td class=\"district_party_bpa_seats_percent\" id=\"" + idPrefix + "bpa_seats_percent\">?.?%</td>";
         }
         table += "</tr>";
       }
       table += "</table>";
       document.write(table);
+
+      /* tired of clicking on the button */
+      calculate();
+
+      function extrapolateResult() {
+        /* TODO: currently hackish, need better implementation, only testing atm */
+        var voteCount = 0;
+        var partyVotes = [];
+        for (var d = 0; d < historicVotes[0].length; ++d) {
+          for (var p = 0; p < historicVotes[0][d].length; ++p) {
+            if (partyVotes.length <= p) {
+              partyVotes.push(0);
+            }
+            partyVotes[p] += historicVotes[0][d][p];
+            voteCount += historicVotes[0][d][p];
+          }
+        }
+        var partyPercentages = [];
+        $("input.votes_percent").each(function(p) {
+          partyPercentages.push(parseFloat(this.value) / 100);
+        });
+        $("input.votes").each(function() {
+          var tmpValues = this.name.split("p");
+          var d = parseInt(tmpValues[0].substr(1));
+          var p = parseInt(tmpValues[1]);
+          this.value = parseInt((historicVotes[0][d][p] * partyPercentages[p]) / (partyVotes[p] / voteCount));
+        });
+        calculate();
+      }
 
       function getDistricts() {
         var districts = [];
@@ -190,13 +220,16 @@
           voteCount += partyVotes[p];
           seatCount += currentPartySeats[p];
         }
+        $("input.votes_percent").each(function(p) {
+          this.value = Math.round(partyVotes[p] * 1000 / voteCount) / 10 + "%";
+        });
         for (var p = 0; p < parties.length; ++p) {
           $("#p" + p + "votes").html(partyVotes[p]);
-          $("#p" + p + "votes_percent").html(Math.round(partyVotes[p] * 1000 / voteCount) / 10 + "%");
+          //$("#p" + p + "votes_percent").html(Math.round(partyVotes[p] * 1000 / voteCount) / 10 + "%");
           $("#p" + p + "current_seats").html(currentPartySeats[p]);
-          $("#p" + p + "current_disproportionality").html(Math.round(currentPartySeats[p] * 1000 / seatCount - partyVotes[p] * 1000 / voteCount) / 10 + "%");
+          $("#p" + p + "current_seats_percent").html(Math.round(currentPartySeats[p] * 1000 / seatCount) / 10 + "%");
           $("#p" + p + "bpa_seats").html(biproportionalPartySeats[p]);
-          $("#p" + p + "bpa_disproportionality").html(Math.round(biproportionalPartySeats[p] * 1000 / seatCount - partyVotes[p] * 1000 / voteCount) / 10 + "%");
+          $("#p" + p + "bpa_seats_percent").html(Math.round(biproportionalPartySeats[p] * 1000 / seatCount) / 10 + "%");
           $("#p" + p + "diff_seats").html(biproportionalPartySeats[p] - currentPartySeats[p]);
         }
       }
@@ -383,7 +416,7 @@
             var idPrefix = "#d" + d + "p" + p;
             $(idPrefix + "votes_percent").html(Math.round(districtPartyVotes[d][p] * 1000 / districtVotes[d]) / 10 + "%"); // TODO: remove from here
             $(idPrefix + "bpa_seats").html(tmpSeats);
-            $(idPrefix + "bpa_disproportionality").html(Math.round(tmpSeats * 1000 / districtSeats[d] - districtPartyVotes[d][p] * 1000 / districtVotes[d]) / 10 + "%");
+            $(idPrefix + "bpa_seats_percent").html(Math.round(tmpSeats * 1000 / districtSeats[d]) / 10 + "%");
           }
         }
       }
@@ -475,7 +508,7 @@
             var tmpSeats = districtPartySeats[d][p] ? districtPartySeats[d][p] : 0; // last "party" will have "undefined" districtPartySeats, so we set it to 0 instead
             var idPrefix = "#d" + d + "p" + p;
             $(idPrefix + "current_seats").html(tmpSeats);
-            $(idPrefix + "current_disproportionality").html(Math.round(tmpSeats * 1000 / districtSeats[d] - districtPartyVotes[d][p] * 1000 / districtVotes[d]) / 10 + "%");
+            $(idPrefix + "current_seats_percent").html(Math.round(tmpSeats * 1000 / districtSeats[d]) / 10 + "%");
           }
         }
       }
