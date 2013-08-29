@@ -138,14 +138,18 @@
           }
         }
         var partyPercentages = [];
+        var sumPercentages = 0;
         $("input.votes_percent").each(function(p) {
           partyPercentages.push(parseFloat(this.value) / 100);
+          sumPercentages += partyPercentages[partyPercentages.length - 1];
         });
+        sumPercentages -= partyPercentages[partyPercentages.length - 1];
+        partyPercentages[partyPercentages.length - 1] = 1 - sumPercentages; // setting "other" parties to whatever is left
         $("input.votes").each(function() {
           var tmpValues = this.name.split("p");
           var d = parseInt(tmpValues[0].substr(1));
           var p = parseInt(tmpValues[1]);
-          this.value = parseInt((historicVotes[0][d][p] * partyPercentages[p]) / (partyVotes[p] / voteCount));
+          this.value = parseInt(historicVotes[0][d][p] * partyPercentages[p] * voteCount / partyVotes[p]);
         });
         calculate();
       }
@@ -430,7 +434,7 @@
         var seatCount = 0;
         for (var d = 0; d < districts.length; ++d) {
           seatCount += districtSeats[d];
-          districtPartySeats.push(sainteLagueApportionment(districtPartyVotes[d], districtSeats[d] - 1, 1.4)); // "- 1" because last seat is leveling seat
+          districtPartySeats.push(sainteLagueApportionment(districtPartyVotes[d], districtSeats[d] - 1, 1.4)); // "- 1" because last seat is leveling seat // TODO: districtPartyVotes[d] includes "other" party, should not do that
           districtVotes.push(0);
           for (var p = 0; p < parties.length - 1; ++p) { // "- 1" because last "party" is the votes of parties too small to win any seats
             districtVotes[d] += districtPartyVotes[d][p];
