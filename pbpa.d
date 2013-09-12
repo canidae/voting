@@ -34,11 +34,11 @@ void main() {
     /* constants */
     immutable first_divisor = 1.0; // first divisor in modified sainte-lague, arguably not necessary.
     immutable seat_threshold = 1; // the minimum amount of seats a party must win
-    auto percentage_threshold = Rational(15, 1000); // percentage of votes needed to win seats (value from 0.0 to 1.0)
+    auto percentage_threshold = Rational(1, 1000); // percentage of votes needed to win seats (value from 0.0 to 1.0)
     auto border_delta_percentage = Rational(1, 100); // how near the min/max multiplier we want to go. value must be greater than 0 and less than 1
 
     /* read file with election results */
-    auto file = File("election_2005.txt");
+    auto file = File("election_2013.txt");
     scope(exit)
         file.close();
     District readDistrict;
@@ -305,11 +305,11 @@ void main() {
         writeln();
         write("                  ");
         foreach (party; parties)
-            writef("| %7.7s ", party.name);
+            writef("| %13.13s ", party.name);
         writefln("| %7.7s", "Total");
         write("------------------");
         foreach (party; parties)
-            write("+---------");
+            write("+---------------");
         write("+---------");
         writeln();
         ulong totalSeatCount;
@@ -318,7 +318,8 @@ void main() {
             ulong districtSeatCount;
             foreach (party; parties) {
                 ulong tmpSeats = cast(long) (districtPartySeats[district][party] + Rational(1, 2));
-                writef("| %7s ", tmpSeats);
+                //writef("| %7s ", tmpSeats);
+                writef("| %7s -> %2s ", districtPartyVotes[district][party], tmpSeats);
                 //writef("| %7.06f", districtPartySeats[district][party]);
                 districtSeatCount += tmpSeats;
             }
@@ -328,7 +329,7 @@ void main() {
         }
         write("------------------");
         foreach (party; parties)
-            write("+---------");
+            write("+---------------");
         write("+---------");
         writeln();
         writef(" %16.16s ", "Total");
@@ -336,7 +337,7 @@ void main() {
             ulong partySeatCount;
             foreach (district; districts)
                 partySeatCount += cast(long) (districtPartySeats[district][party] + Rational(1, 2));
-            writef("| %3s/%3s ", partySeatCount, party.seats);
+            writef("|       %3s/%3s ", partySeatCount, party.seats);
         }
         writef("| %3s/%3s ", totalSeatCount, maxSeats);
         writeln();

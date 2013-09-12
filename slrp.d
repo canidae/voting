@@ -66,20 +66,27 @@ void main() {
             districts ~= readDistrict;
             maxSeats += value;
         } else {
-            /* otherwise it's a party */
-            Party readParty;
-            if (text in readParties) {
-                readParty = readParties[text];
-            } else {
-                readParty = new Party(text);
-                readParties[text] = readParty;
-                parties ~= readParty;
-            }
-            foreach (i; 0 .. value) {
-                if (text == "FRP")
-                    readDistrict.votes ~= Vote([readParty, readParties["H"]]);
-                else
+            /* otherwise it's a party preference list */
+            delimPos = 0;
+
+            while (true) {
+                auto prevPos = delimPos;
+                delimPos = text[delimPos .. $].indexOf(">");
+                string partyName = text[prevPos .. (delimPos == -1 ? $ : delimPos)];
+                Party readParty;
+                if (partyName in readParties) {
+                    readParty = readParties[partyName];
+                } else {
+                    readParty = new Party(partyName);
+                    readParties[partyName] = readParty;
+                    parties ~= readParty;
+                }
+                foreach (i; 0 .. value)
                     readDistrict.votes ~= Vote([readParty]);
+
+                if (delimPos == -1)
+                    break;
+                ++delimPos;
             }
             maxVotes += value;
         }
@@ -92,25 +99,28 @@ void main() {
     writefln("Votes: %s", maxVotes);
     writeln();
 
-    long[] resultTable = new long[parties.length * parties.length];
-    resultTable[] = 0;
-    foreach (district; districts) {
-        foreach (vote; district.votes) {
-            bool[Party] betterParties;
-            foreach (vparty; vote.parties) {
-                foreach (party; parties) {
-                    if (party == vparty || party in betterParties)
-                        continue;
-                    ++resultTable[vparty.id + party.id * parties.length];
-                }
-                betterParties[vparty] = true;
-            }
-        }
-    }
-
     int round = 1;
     long seats = maxSeats;
     while (seats > 0) {
+        /* tally (reweighted) votes */
+        real[] resultTable = new real[parties.length * parties.length];
+        resultTable[] = 0.0;
+        foreach (district; districts) {
+            foreach (vote; district.votes) {
+                bool[Party] betterParties;
+                int seatSum = 0;
+                foreach (vparty; vote.parties) {
+                    seatSum += vparty.seats;
+                    foreach (party; parties) {
+                        if (party == vparty || party in betterParties)
+                            continue;
+                        resultTable[vparty.id + party.id * parties.length] += 1.0 / (2 * seatSum + 1);
+                    }
+                    betterParties[vparty] = true;
+                }
+            }
+        }
+
         /* print matrix */
         writef("        ");
         foreach (party; parties)
@@ -119,7 +129,7 @@ void main() {
         foreach (a, partyA; parties) {
             writef("%7.7s ", partyA.name);
             foreach (b, partyB; parties)
-                writef("| %7s ", resultTable[a + b * parties.length] / (2 * partyA.seats + 1));
+                writef("| %7s ", resultTable[a + b * parties.length]);
             writeln("|");
         }
         writeln();
@@ -130,8 +140,8 @@ void main() {
             foreach (b, partyB; parties) {
                 if (a == b)
                     continue;
-                long cA = resultTable[a + b * parties.length] / (2 * partyA.seats + 1);
-                long cB = resultTable[b + a * parties.length] / (2 * partyB.seats + 1);
+                real cA = resultTable[a + b * parties.length];
+                real cB = resultTable[b + a * parties.length];
                 if (cA == cB) {
                     /* tie, what now? */
                     writefln("Tie between %s and %s", parties[a].name, parties[b].name);
