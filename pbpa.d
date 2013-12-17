@@ -32,9 +32,9 @@ struct Vote {
 
 void main() {
     /* constants */
-    immutable first_divisor = 1.0; // first divisor in modified sainte-lague, arguably not necessary.
+    immutable first_divisor = 1.4; // first divisor in modified sainte-lague, arguably not necessary.
     immutable seat_threshold = 1; // the minimum amount of seats a party must win
-    auto percentage_threshold = Rational(1, 1000); // percentage of votes needed to win seats (value from 0.0 to 1.0)
+    auto percentage_threshold = Rational(15, 1000); // percentage of votes needed to win seats (value from 0.0 to 1.0)
     auto border_delta_percentage = Rational(1, 100); // how near the min/max multiplier we want to go. value must be greater than 0 and less than 1
 
     /* read file with election results */
@@ -120,6 +120,29 @@ void main() {
             ++winner.seats;
             //writefln("Assigning seat to %s", winner.name);
         }
+        /* alternative upper apportionment (rounding instead of Sainte-Laguë) */
+        /*
+        auto multiplier = Rational(maxSeats, voteCount);
+        auto minMultiplier = Rational(0);
+        auto maxMultiplier = Rational(voteCount);
+        while (true) {
+            auto seatsAssigned = 0;
+            foreach (party; parties) {
+                party.seats = cast(long) (partyVotes[party] * multiplier);
+                seatsAssigned += party.seats;
+            }
+            if (seatsAssigned < maxSeats) {
+                minMultiplier = multiplier;
+                multiplier = (multiplier + maxMultiplier) / 2;
+            } else if (seatsAssigned > maxSeats) {
+                maxMultiplier = multiplier;
+                multiplier = (multiplier + minMultiplier) / 2;
+            } else {
+                break;
+            }
+        }
+        */
+
         Party loser;
         foreach (party; parties) {
             if (loser is null || partyVotes[party] < partyVotes[loser])
@@ -233,8 +256,7 @@ void main() {
                    - maxMultiplier may due to rounding errors result in party.seats, but we're expecting it to end in
                      party.seats + 1, and in that case we need to reduce it with "smallest possible value".
                    "smallest possible value" depends on the value of maxMultiplier.
-
-                   for now, we're using average */
+                 */
 
                 //multiplier = minMultiplier < 1 ? minMultiplier : maxMultiplier - 0.0001; // TODO: if we're using highest possible multiplier we need to reduce it with smallest possible value (which is difficult)
                 long denominator = cast(long) (1 / (maxMultiplier - minMultiplier)).ceil();

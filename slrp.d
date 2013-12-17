@@ -3,6 +3,8 @@ import std.conv: to;
 import std.stdio;
 import std.string: stripLeft, stripRight, indexOf;
 
+import rational;
+
 class Party {
     string name;
     int id;
@@ -33,12 +35,13 @@ struct Vote {
 struct Pair {
     Party winner;
     Party loser;
-    real diff;
+    //real diff;
+    Rational diff;
 }
 
 void main() {
     /* read file with election results */
-    auto file = File("election_small.txt");
+    auto file = File("election_slrp_1.txt");
     scope(exit)
         file.close();
     District readDistrict;
@@ -67,12 +70,11 @@ void main() {
             maxSeats += value;
         } else {
             /* otherwise it's a party preference list */
-            delimPos = 0;
-
             while (true) {
-                auto prevPos = delimPos;
-                delimPos = text[delimPos .. $].indexOf(">");
-                string partyName = text[prevPos .. (delimPos == -1 ? $ : delimPos)];
+                delimPos = text.indexOf(">");
+                string partyName = text[0 .. (delimPos == -1 ? $ : delimPos)];
+                if (delimPos > 0)
+                    text = text[delimPos + 1 .. $];
                 Party readParty;
                 if (partyName in readParties) {
                     readParty = readParties[partyName];
@@ -103,8 +105,9 @@ void main() {
     long seats = maxSeats;
     while (seats > 0) {
         /* tally (reweighted) votes */
-        real[] resultTable = new real[parties.length * parties.length];
-        resultTable[] = 0.0;
+        //real[] resultTable = new real[parties.length * parties.length];
+        auto resultTable = new Rational[parties.length * parties.length];
+        resultTable[] = Rational(0);
         foreach (district; districts) {
             foreach (vote; district.votes) {
                 bool[Party] betterParties;
@@ -114,7 +117,8 @@ void main() {
                     foreach (party; parties) {
                         if (party == vparty || party in betterParties)
                             continue;
-                        resultTable[vparty.id + party.id * parties.length] += 1.0 / (2 * seatSum + 1);
+                        //resultTable[vparty.id + party.id * parties.length] += 1.0 / (2 * seatSum + 1);
+                        resultTable[vparty.id + party.id * parties.length] += Rational(1, (2 * seatSum + 1));
                     }
                     betterParties[vparty] = true;
                 }
@@ -129,7 +133,7 @@ void main() {
         foreach (a, partyA; parties) {
             writef("%7.7s ", partyA.name);
             foreach (b, partyB; parties)
-                writef("| %7s ", resultTable[a + b * parties.length]);
+                writef("| %7s ", cast(real) resultTable[a + b * parties.length]);
             writeln("|");
         }
         writeln();
@@ -140,8 +144,8 @@ void main() {
             foreach (b, partyB; parties) {
                 if (a == b)
                     continue;
-                real cA = resultTable[a + b * parties.length];
-                real cB = resultTable[b + a * parties.length];
+                auto cA = resultTable[a + b * parties.length];
+                auto cB = resultTable[b + a * parties.length];
                 if (cA == cB) {
                     /* tie, what now? */
                     writefln("Tie between %s and %s", parties[a].name, parties[b].name);
@@ -169,13 +173,13 @@ void main() {
                     children = children[1 .. $];
                 }
                 if (createsCycle) {
-                    writefln("Not locking %s > %s (%s), would create a cyclic graph", pair.winner.name, pair.loser.name, pair.diff);
+                    writefln("Not locking %s > %s (%s), would create a cyclic graph", pair.winner.name, pair.loser.name, cast(real) pair.diff);
                     continue;
                 }
             } else {
                 graph[pair.loser] = [];
             }
-            writefln("Locking %s > %s (%s)", pair.winner.name, pair.loser.name, pair.diff);
+            writefln("Locking %s > %s (%s)", pair.winner.name, pair.loser.name, cast(real) pair.diff);
             graph[pair.winner] ~= pair.loser;
         }
         writeln();

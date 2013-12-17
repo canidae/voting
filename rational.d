@@ -147,6 +147,10 @@ struct Rational {
         return (num / den).toLong();
     }
 
+    real opCast(T : real)() /*const pure nothrow*/ {
+        return cast(real) num.toLong() / cast (real) den.toLong();
+    }
+
     int opCmp(T)(/*in*/ T r) /*const pure nothrow*/ {
         Rational rhs = Rational(r);
         if (type() == Type.NaRAT || rhs.type() == Type.NaRAT)
